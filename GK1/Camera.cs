@@ -18,7 +18,8 @@ namespace GK1
 
         Vector3 position = new Vector3(0, 50, 10);
 
-        float angle;
+        private float angleZ;
+        private float angleX;
 
         public Matrix ViewMatrix
         {
@@ -26,7 +27,7 @@ namespace GK1
             {
                 var lookAtVector = new Vector3(0, -1, -.5f);
                 // We'll create a rotation matrix using our angle
-                var rotationMatrix = Matrix.CreateRotationZ(angle);
+                var rotationMatrix = Matrix.CreateRotationZ(angleZ);
                 // Then we'll modify the vector using this matrix:
                 lookAtVector = Vector3.Transform(lookAtVector, rotationMatrix);
                 lookAtVector += position;
@@ -61,36 +62,69 @@ namespace GK1
 
         public void Update(GameTime gameTime)
         {
+            HandleRotation(gameTime);
+            HandleWsadMoves(gameTime);
+        }
+
+        private void HandleRotation(GameTime gameTime)
+        {
             var touchCollection = Mouse.GetState();
-            bool isTouchingScreen = touchCollection.LeftButton == ButtonState.Pressed;
-            if (isTouchingScreen)
+            var isMousePressed = touchCollection.LeftButton == ButtonState.Pressed;
+            if (isMousePressed)
             {
                 var xPosition = touchCollection.Position.X;
                 var yPosition = touchCollection.Position.Y;
 
-                float xRatio = xPosition / (float)graphicsDevice.Viewport.Width;
-                float yRatio = yPosition / (float)graphicsDevice.Viewport.Height;
+                var xRatio = xPosition/(float) graphicsDevice.Viewport.Width;
+                var yRatio = yPosition/(float) graphicsDevice.Viewport.Height;
 
-                if (xRatio < 1 / 3.0f)
-                {
-                    angle += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
-                else if (xRatio < 2 / 3.0f )
-                {
-                    var forwardVector = new Vector3(0, -1, 0);
-
-                    var rotationMatrix = Matrix.CreateRotationZ(angle);
-                    forwardVector = Vector3.Transform(forwardVector, rotationMatrix);
-
-                    const float unitsPerSecond = 3;
-
-                    this.position += forwardVector * unitsPerSecond *
-                    (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
+                if (xRatio < 1/3.0f)
+                    angleZ += (float) gameTime.ElapsedGameTime.TotalSeconds;
                 else
-                {
-                    angle -= (float)gameTime.ElapsedGameTime.TotalSeconds;
-                }
+                    angleZ -= (float) gameTime.ElapsedGameTime.TotalSeconds;
+            }
+        }
+
+        private void HandleWsadMoves(GameTime gameTime)
+        {
+            var state = Keyboard.GetState();
+            if (state.IsKeyDown(Keys.W))
+                MoveForwardBackwards(gameTime, Direction.Forward);
+            if (state.IsKeyDown(Keys.S))
+                MoveForwardBackwards(gameTime, Direction.Backwards);
+            if (state.IsKeyDown(Keys.A))
+                MoveForwardBackwards(gameTime, Direction.Left);
+            if (state.IsKeyDown(Keys.D))
+                MoveForwardBackwards(gameTime, Direction.Right);
+        }
+
+        private void MoveForwardBackwards(GameTime gameTime, Direction direction)
+        {
+            var directionVector = CreateDirectionVector(direction);
+
+            var rotationMatrix = Matrix.CreateRotationZ(angleZ);
+            directionVector = Vector3.Transform(directionVector, rotationMatrix);
+
+            const float unitsPerSecond = 3;
+
+            position += directionVector * unitsPerSecond *
+                        (float)gameTime.ElapsedGameTime.TotalSeconds;
+        }
+
+        private static Vector3 CreateDirectionVector(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.Forward:
+                    return new Vector3(0, -1, 0);
+                case Direction.Backwards:
+                    return new Vector3(0, 1, 0);
+                case Direction.Left:
+                    return new Vector3(1, 0, 0);
+                case Direction.Right:
+                    return new Vector3(-1, 0, 0);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
         }
     }
