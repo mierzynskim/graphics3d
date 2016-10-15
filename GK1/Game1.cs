@@ -28,7 +28,6 @@ namespace GK1
         protected override void Initialize()
         {
             LoadVertices();
-
             effect = new BasicEffect(graphics.GraphicsDevice);
             effect.AmbientLightColor = new Vector3(0.0f, 1.0f, 0.0f);
 

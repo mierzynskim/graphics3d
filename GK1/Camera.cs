@@ -27,7 +27,7 @@ namespace GK1
             {
                 var lookAtVector = new Vector3(0, -1, -.5f);
                 // We'll create a rotation matrix using our angle
-                var rotationMatrix = Matrix.CreateRotationZ(angleZ);
+                var rotationMatrix = Matrix.Multiply(Matrix.CreateRotationZ(angleZ), Matrix.CreateRotationX(angleX));
                 // Then we'll modify the vector using this matrix:
                 lookAtVector = Vector3.Transform(lookAtVector, rotationMatrix);
                 lookAtVector += position;
@@ -58,6 +58,8 @@ namespace GK1
         public Camera(GraphicsDevice graphicsDevice)
         {
             this.graphicsDevice = graphicsDevice;
+            Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
+            originalMouseState = Mouse.GetState();
         }
 
         public void Update(GameTime gameTime)
@@ -66,22 +68,18 @@ namespace GK1
             HandleWsadMoves(gameTime);
         }
 
+        private MouseState originalMouseState;
+
         private void HandleRotation(GameTime gameTime)
         {
-            var touchCollection = Mouse.GetState();
-            var isMousePressed = touchCollection.LeftButton == ButtonState.Pressed;
-            if (isMousePressed)
+            var currentMouseState = Mouse.GetState();
+            if (currentMouseState != originalMouseState)
             {
-                var xPosition = touchCollection.Position.X;
-                var yPosition = touchCollection.Position.Y;
-
-                var xRatio = xPosition/(float) graphicsDevice.Viewport.Width;
-                var yRatio = yPosition/(float) graphicsDevice.Viewport.Height;
-
-                if (xRatio < 1/3.0f)
-                    angleZ += (float) gameTime.ElapsedGameTime.TotalSeconds;
-                else
-                    angleZ -= (float) gameTime.ElapsedGameTime.TotalSeconds;
+                float xDifference = currentMouseState.X - originalMouseState.X;
+                float yDifference = currentMouseState.Y - originalMouseState.Y;
+                angleZ -= 0.3f * xDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
+                angleX -= 0.3f * yDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
+                Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
             }
         }
 
