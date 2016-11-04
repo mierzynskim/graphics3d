@@ -10,9 +10,9 @@ namespace GK1
     public class Bench
     {
         private float scale = 0.2f;
-        public virtual Matrix GetWorld(Matrix worldMatrix, Matrix projectionMatrix)
+        public virtual Matrix GetWorld(Matrix worldMatrix)
         {
-            return Matrix.CreateScale(scale) * Matrix.CreateRotationX(90) * worldMatrix;
+            return Matrix.CreateScale(scale) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * worldMatrix;
         }
     }
 }

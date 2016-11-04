@@ -16,7 +16,7 @@ namespace GK1
         // in the ProjectionMatrix property.
         GraphicsDevice graphicsDevice;
 
-        Vector3 position = new Vector3(0, 50, 10);
+        Vector3 position = new Vector3(0, 0, 10);
 
         private float angleZ;
         private float angleX;
@@ -34,8 +34,7 @@ namespace GK1
 
                 var upVector = Vector3.UnitZ;
 
-                return Matrix.CreateLookAt(
-                    position, lookAtVector, upVector);
+                return Matrix.CreateLookAt(position, lookAtVector, upVector);
             }
         }
 
