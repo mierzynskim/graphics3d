@@ -7,42 +7,35 @@ namespace GK1
 {
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
+        private GraphicsDeviceManager graphics;
+        private VertexPositionNormalTexture[] floorVerts;
+        private Effect effect;
+        private Camera camera;
+        private CModel benchModel;
 
-        VertexPositionNormalTexture[] floorVerts;
-
-        BasicEffect effect;
-
-        // New camera code
-        Camera camera;
-        private Bench bench;
-
-        private Model benchModel;
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-
             Content.RootDirectory = "Content";
         }
 
         protected override void Initialize()
         {
             LoadVertices();
-            effect = new BasicEffect(graphics.GraphicsDevice);
-            effect.AmbientLightColor = new Vector3(0.0f, 1.0f, 0.0f);
-
-
-            effect.DirectionalLight0.Enabled = true;
-            effect.DirectionalLight0.DiffuseColor = Vector3.One;
-            effect.DirectionalLight0.Direction = Vector3.Normalize(Vector3.One);
-            effect.LightingEnabled = true;
+            effect = Content.Load<Effect>("Shader");
 
             camera = new Camera(graphics.GraphicsDevice);
-            bench = new Bench();
 
-            benchModel = Content.Load<Model>("benchSeat");
-
+            benchModel = new CModel(Content.Load<Model>("Bench"), new Vector3(0, 0, 0), Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
+            //benchModel = new CModel(Content.Load<Model>("benchSeat"), new Vector3(40, 0, 40), Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.2f), GraphicsDevice);
+            benchModel.SetModelEffect(effect, true);
+            var mat = new LightingMaterial
+            {
+                AmbientColor = Color.Red.ToVector3()*.15f,
+                LightColor = Color.Blue.ToVector3()*.85f
+            };
+            benchModel.Material = mat;
             base.Initialize();
         }
 
@@ -61,8 +54,6 @@ namespace GK1
 
         protected override void Update(GameTime gameTime)
         {
-            //robot.Update(gameTime);
-            // New camera code
             camera.Update(gameTime);
             base.Update(gameTime);
         }
@@ -70,34 +61,18 @@ namespace GK1
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
+            effect.Parameters["CameraPosition"].SetValue(camera.Position);
             DrawGround();
-            DrawModel(new Vector3(0, 0, 0));
-            DrawModel(new Vector3(40, 0, 40));
+            benchModel.Draw(camera);
 
             base.Draw(gameTime);
         }
 
-        private void DrawModel(Vector3 position)
+        private void DrawGround()
         {
-            foreach (var mesh in benchModel.Meshes)
-            {
-                foreach (BasicEffect effect in mesh.Effects)
-                {
-                    effect.World = Matrix.CreateTranslation(position) * bench.GetWorld(camera.WorldMatrix);
-                    effect.View = camera.ViewMatrix;
-                    effect.Projection = camera.ProjectionMatrix;
-                }
-
-                mesh.Draw();
-            }
-        }
-
-        void DrawGround()
-        {
-            effect.View = camera.ViewMatrix;
-            effect.Projection = camera.ProjectionMatrix;
-            effect.World = Matrix.CreateScale(15f)* Matrix.CreateTranslation(new Vector3(0, 0, 15f)) * camera.WorldMatrix; 
+            effect.Parameters["View"].SetValue(camera.ViewMatrix);
+            effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
+            effect.Parameters["World"].SetValue(Matrix.CreateScale(15f) * Matrix.CreateTranslation(new Vector3(0, 0, 15f)) * camera.WorldMatrix);
 
 
             foreach (var pass in effect.CurrentTechnique.Passes)
@@ -185,3 +160,5 @@ namespace GK1
         }
     }
 }
+
+

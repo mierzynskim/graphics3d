@@ -16,7 +16,7 @@ namespace GK1
         // in the ProjectionMatrix property.
         GraphicsDevice graphicsDevice;
 
-        Vector3 position = new Vector3(0, 0, 10);
+        public Vector3 Position { get; private set; } = new Vector3(0, 0, 10);
 
         private float angleZ;
         private float angleX;
@@ -30,11 +30,11 @@ namespace GK1
                 var rotationMatrix = Matrix.Multiply(Matrix.CreateRotationZ(angleZ), Matrix.CreateRotationX(angleX));
                 // Then we'll modify the vector using this matrix:
                 lookAtVector = Vector3.Transform(lookAtVector, rotationMatrix);
-                lookAtVector += position;
+                lookAtVector += Position;
 
                 var upVector = Vector3.UnitZ;
 
-                return Matrix.CreateLookAt(position, lookAtVector, upVector);
+                return Matrix.CreateLookAt(Position, lookAtVector, upVector);
             }
         }
 
@@ -104,7 +104,7 @@ namespace GK1
 
             const float unitsPerSecond = 3;
 
-            position += directionVector * unitsPerSecond *
+            Position += directionVector * unitsPerSecond *
                         (float)gameTime.ElapsedGameTime.TotalSeconds;
         }
 
