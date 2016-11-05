@@ -30,7 +30,7 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
 
             camera = new Camera(graphics.GraphicsDevice);
-            var modelsPositions = new List<Vector3> { new Vector3(-10, 0, 0), new Vector3(10, 0, 0) };
+            var modelsPositions = new List<Vector3> { new Vector3(-10, 0, 0), new Vector3(10, 0, 0), new Vector3(0, 10, 0) };
             mat = new LightingMaterial
             {
                 AmbientColor = Color.Gray.ToVector3() * .15f,
@@ -49,6 +49,11 @@ namespace GK1
                 model.Material = mat;
                 models.Add(model);
             }
+
+            var advertModel = new CModel(Content.Load<Model>("billboard_a_2012"), modelsPositions[2], Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.9f), GraphicsDevice);
+            advertModel.SetModelEffect(effect, true);
+            advertModel.Material = mat;
+            models.Add(advertModel);
 
             base.Initialize();
         }
