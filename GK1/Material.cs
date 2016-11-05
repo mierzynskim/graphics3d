@@ -39,8 +39,8 @@ namespace GK1
             LightPosition = new Vector3[] {Vector3.Zero, Vector3.Zero, Vector3.Zero, };
             LightColor = new Vector3[] {Vector3.One, Vector3.One, Vector3.One};
             SpecularColor = new Vector3(1, 1, 1);
-            LightAttenuation = new float[] {5000, 5000, 5000};
-            LightFalloff = new float[] { 2, 2, 2};
+            LightAttenuation = new float[] {5000, 2000, 5000};
+            LightFalloff = new float[] { 2, 1, 2};
     }
 
         public override void SetEffectParameters(Effect effect)

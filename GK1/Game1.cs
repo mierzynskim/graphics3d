@@ -14,6 +14,7 @@ namespace GK1
         private Camera camera;
         private List<CModel> models = new List<CModel>();
         private Texture2D metroTexture;
+        private LightingMaterial mat;
 
 
         public Game1()
@@ -29,16 +30,16 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
 
             camera = new Camera(graphics.GraphicsDevice);
-            var modelsPositions = new List<Vector3> { new Vector3(0, 0, 0), new Vector3(10, 0, 0)};
-            var mat = new LightingMaterial
+            var modelsPositions = new List<Vector3> { new Vector3(-10, 0, 0), new Vector3(10, 0, 0) };
+            mat = new LightingMaterial
             {
-                AmbientColor = Color.Red.ToVector3() * .15f,
+                AmbientColor = Color.Gray.ToVector3() * .15f,
                 LightColor = new[] {
                             new Vector3(0.5f, 0.5f, 0.5f),
-                            new Vector3(0f, 0.5f, 0.5f),
+                            new Vector3(0.5f, 0.5f, 0.5f),
                             new Vector3(0.5f, 0.5f, 0.5f) },
                 LightTypes = new[] { LightType.Reflector, LightType.Point, LightType.Point },
-                LightDirection = new Vector3[] { Vector3.One, Vector3.One, Vector3.One },
+                LightDirection = new Vector3[] { Vector3.One, Vector3.UnitZ, Vector3.UnitZ },
                 LightPosition = new Vector3[] { Vector3.Zero, new Vector3(0, 30, 0), new Vector3(10, 10, 10) }
             };
             for (var i = 0; i < 2; i++)
@@ -68,8 +69,22 @@ namespace GK1
         protected override void Update(GameTime gameTime)
         {
             camera.Update(gameTime);
+            UpdateLightsColor(gameTime);
             base.Update(gameTime);
         }
+
+        private void UpdateLightsColor(GameTime gameTime)
+        {
+            var r = new Random();
+            if (gameTime.TotalGameTime.TotalMilliseconds - PrevLightUpdateTime.TotalMilliseconds > 500)
+            {
+                var newColor = new Color(r.Next(255), r.Next(255), r.Next(255));
+                mat.LightColor[0] = newColor.ToVector3();
+                PrevLightUpdateTime = gameTime.TotalGameTime;
+            }
+        }
+
+        public TimeSpan PrevLightUpdateTime { get; set; }
 
         protected override void Draw(GameTime gameTime)
         {
@@ -78,6 +93,7 @@ namespace GK1
             DrawGround();
             foreach (var cModel in models)
             {
+                cModel.Material = mat;
                 cModel.Draw(camera);
             }
 
@@ -110,7 +126,7 @@ namespace GK1
         {
             var vertices = new VertexPositionNormalTexture[36];
             var texcoords = new Vector2(0f, 0f);
-            var texcoordsArr = new [] {new Vector2(0f, 0f), new Vector2(1f, 1f) , new Vector2(0f, 1f) , new Vector2(1f, 1f),new Vector2(0f, 0f),  new Vector2(1f, 0f) };
+            var texcoordsArr = new[] { new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(1f, 0f) };
 
             var face = new Vector3[6];
             //TopLeft
@@ -168,7 +184,7 @@ namespace GK1
             }
 
             //Bottom face
-            
+
             for (int i = 0, j = 0; i <= 2; i++)
             {
                 vertices[i + 30] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoordsArr[j++]);
