@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -11,7 +12,7 @@ namespace GK1
         private VertexPositionNormalTexture[] floorVerts;
         private Effect effect;
         private Camera camera;
-        private CModel benchModel;
+        private List<CModel> models = new List<CModel>();
 
 
         public Game1()
@@ -26,16 +27,26 @@ namespace GK1
             effect = Content.Load<Effect>("Shader");
 
             camera = new Camera(graphics.GraphicsDevice);
-
-            benchModel = new CModel(Content.Load<Model>("Bench"), new Vector3(0, 0, 0), Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
-            //benchModel = new CModel(Content.Load<Model>("benchSeat"), new Vector3(40, 0, 40), Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.2f), GraphicsDevice);
-            benchModel.SetModelEffect(effect, true);
+            var modelsPositions = new List<Vector3> { new Vector3(0, 0, 0), new Vector3(10, 0, 0)};
             var mat = new LightingMaterial
             {
-                AmbientColor = Color.Red.ToVector3()*.15f,
-                LightColor = Color.Blue.ToVector3()*.85f
+                AmbientColor = Color.Red.ToVector3() * .15f,
+                LightColor = new[] {
+                            new Vector3(0.5f, 0.5f, 0.5f),
+                            new Vector3(0f, 0.5f, 0.5f),
+                            new Vector3(0.5f, 0.5f, 0.5f) },
+                LightTypes = new[] { LightType.Reflector, LightType.Point, LightType.Point },
+                LightDirection = new Vector3[] { Vector3.One, Vector3.One, Vector3.One },
+                LightPosition = new Vector3[] { Vector3.Zero, new Vector3(0, 30, 0), new Vector3(10, 10, 10) }
             };
-            benchModel.Material = mat;
+            for (var i = 0; i < 2; i++)
+            {
+                var model = new CModel(Content.Load<Model>("Bench"), modelsPositions[i], Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
+                model.SetModelEffect(effect, true);
+                model.Material = mat;
+                models.Add(model);
+            }
+
             base.Initialize();
         }
 
@@ -63,14 +74,19 @@ namespace GK1
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
             DrawGround();
-            benchModel.Draw(camera);
+            foreach (var cModel in models)
+            {
+                cModel.Draw(camera);
+            }
 
             base.Draw(gameTime);
         }
 
         private void DrawGround()
         {
+            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
+            effect.Parameters["TextureEnabled"].SetValue(false);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
             effect.Parameters["World"].SetValue(Matrix.CreateScale(15f) * Matrix.CreateTranslation(new Vector3(0, 0, 15f)) * camera.WorldMatrix);
 

@@ -14,14 +14,22 @@ sampler BasicTextureSampler = sampler_state {
 	AddressV = Wrap; // Address Mode for V Coordinates
 };
 
-bool TextureEnabled = false;
+bool TextureEnabled = true;
+
+#define NUM_LIGHTS 3
+#define REFLECTOR_LIGHT 0
+#define POINT_LIGHT 1
 
 float3 DiffuseColor = float3(1, 1, 1);
 float3 AmbientColor = float3(0.1, 0.1, 0.1);
-float3 LightDirection = float3(1, 1, 1);
-float3 LightColor = float3(0.9, 0.9, 0.9);
+float3 LightDirection[NUM_LIGHTS];
+float3 LightPosition[NUM_LIGHTS];
+float3 LightColor[NUM_LIGHTS];
 float SpecularPower = 32;
 float3 SpecularColor = float3(1, 1, 1);
+float3 LightAttenuation[NUM_LIGHTS];
+float3 LightFalloff[NUM_LIGHTS];
+float LightType[NUM_LIGHTS];
 
 struct VertexShaderInput
 {
@@ -36,6 +44,7 @@ struct VertexShaderOutput
 	float2 UV : TEXCOORD0;
 	float3 Normal : TEXCOORD1;
 	float3 ViewDirection : TEXCOORD2;
+	float4 WorldPosition : TEXCOORD3;
 };
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
@@ -49,11 +58,12 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	output.UV = input.UV;
 	output.Normal = mul(input.Normal, World);
 	output.ViewDirection = worldPosition - CameraPosition;
+	output.WorldPosition = worldPosition;
 
 	return output;
 }
 
-float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
+float4 AddReflectorLight(int i, VertexShaderOutput input)
 {
 	// Start with diffuse color
 	float3 color = DiffuseColor;
@@ -65,11 +75,11 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	// Start with ambient lighting
 	float3 lighting = AmbientColor;
 
-	float3 lightDir = normalize(LightDirection);
+	float3 lightDir = normalize(LightDirection[i]);
 	float3 normal = normalize(input.Normal);
 
 	// Add lambertian lighting
-	lighting += saturate(dot(lightDir, normal)) * LightColor;
+	lighting += saturate(dot(lightDir, normal)) * LightColor[i];
 
 	float3 refl = reflect(lightDir, normal);
 	float3 view = normalize(input.ViewDirection);
@@ -81,6 +91,46 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float3 output = saturate(lighting) * color;
 
 	return float4(output, 1);
+}
+
+float4 AddPointLight(int i, VertexShaderOutput input)
+{
+	float3 diffuseColor = DiffuseColor;
+
+	if (TextureEnabled)
+		diffuseColor *= tex2D(BasicTextureSampler, input.UV).rgb;
+	float3 totalLight = float3(0, 0, 0);
+
+	totalLight += AmbientColor;
+
+	float3 lightDir = normalize(LightPosition[i] - input.WorldPosition);
+	float diffuse = saturate(dot(normalize(input.Normal), lightDir));
+	float d = distance(LightPosition[i], input.WorldPosition);
+	float att = 1 - pow(clamp(d / LightAttenuation[i], 0, 1),
+		LightFalloff[i]);
+
+	totalLight += diffuse * att * LightColor[i];
+
+	return float4(diffuseColor * totalLight, 1);
+}
+
+float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
+{
+	float4 outColor = float4(0, 0, 0, 0);
+	for (int i = 0; i < NUM_LIGHTS; i++)
+	{
+		if (LightType[i] == REFLECTOR_LIGHT)
+		{
+			outColor += AddReflectorLight(i, input);
+		}
+
+		if (LightType[i] == POINT_LIGHT)
+		{
+			outColor += AddPointLight(i, input);
+		}
+	}
+
+	return outColor;
 }
 
 technique Technique1
