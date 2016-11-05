@@ -1,3 +1,6 @@
+#define NUM_LIGHTS 4
+#define REFLECTOR_LIGHT 0
+#define POINT_LIGHT 1
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
@@ -15,10 +18,6 @@ sampler BasicTextureSampler = sampler_state {
 };
 
 bool TextureEnabled = true;
-
-#define NUM_LIGHTS 3
-#define REFLECTOR_LIGHT 0
-#define POINT_LIGHT 1
 
 float3 DiffuseColor = float3(1, 1, 1);
 float3 AmbientColor = float3(0.1, 0.1, 0.1);
@@ -52,13 +51,13 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	VertexShaderOutput output;
 
 	float4 worldPosition = mul(input.Position, World);
-	float4x4 viewProjection = mul(View, Projection);
+	float4 viewPosition = mul(worldPosition, View);
 
-	output.Position = mul(worldPosition, viewProjection);
+	output.Position = mul(viewPosition, Projection);
+	output.WorldPosition = worldPosition;
 	output.UV = input.UV;
 	output.Normal = mul(input.Normal, World);
 	output.ViewDirection = worldPosition - CameraPosition;
-	output.WorldPosition = worldPosition;
 
 	return output;
 }
@@ -114,23 +113,32 @@ float4 AddPointLight(int i, VertexShaderOutput input)
 	return float4(diffuseColor * totalLight, 1);
 }
 
-float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
+float4 CalculateLights(VertexShaderOutput input)
 {
 	float4 outColor = float4(0, 0, 0, 0);
+	outColor += AddReflectorLight(0, input);
+	outColor += AddReflectorLight(1, input);
+	outColor += AddPointLight(2, input);
+	outColor += AddPointLight(3, input);
 	for (int i = 0; i < NUM_LIGHTS; i++)
 	{
-		if (LightType[i] == REFLECTOR_LIGHT)
+		if (LightType[i] == 0)
 		{
-			outColor += AddReflectorLight(i, input);
+			//outColor += AddReflectorLight(i, input);
 		}
 
-		if (LightType[i] == POINT_LIGHT)
+		else if (LightType[i] == 1)
 		{
-			outColor += AddPointLight(i, input);
+			//outColor += AddPointLight(i, input);
 		}
 	}
 
 	return outColor;
+}
+
+float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
+{
+	return CalculateLights(input);
 }
 
 technique Technique1

@@ -30,32 +30,53 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
 
             camera = new Camera(graphics.GraphicsDevice);
-            var modelsPositions = new List<Vector3> { new Vector3(-10, 0, 0), new Vector3(10, 0, 0), new Vector3(0, 10, 0) };
+            CreateModels();
+
+            base.Initialize();
+        }
+
+        private void CreateModels()
+        {
+            var modelsPositions = new List<Vector3>
+            {
+                new Vector3(-10, 0, 0),
+                new Vector3(10, 0, 0),
+                new Vector3(-10, 10, 0),
+                new Vector3(10, 10, 0)
+            };
             mat = new LightingMaterial
             {
-                AmbientColor = Color.Gray.ToVector3() * .15f,
-                LightColor = new[] {
-                            new Vector3(0.5f, 0.5f, 0.5f),
-                            new Vector3(0.5f, 0.5f, 0.5f),
-                            new Vector3(0.5f, 0.5f, 0.5f) },
-                LightTypes = new[] { LightType.Reflector, LightType.Point, LightType.Point },
-                LightDirection = new Vector3[] { Vector3.One, Vector3.UnitZ, Vector3.UnitZ },
-                LightPosition = new Vector3[] { Vector3.Zero, new Vector3(0, 30, 0), new Vector3(10, 10, 10) }
+                AmbientColor = Color.Gray.ToVector3()*.15f,
+                LightColor = new[]
+                {
+                    new Vector3(0f, 0.5f, 0.5f),
+                    new Vector3(0.5f, 0f, 0.5f),
+                    new Vector3(.85f, .85f, .85f),
+                    new Vector3(.85f, .85f, .85f),
+                },
+                LightTypes = new[] {LightType.Reflector, LightType.Reflector, LightType.Point, LightType.Point},
             };
+            mat.LightDirection[0] = new Vector3(-10, 10, 5);
+            mat.LightDirection[1] = new Vector3(10, 10, 5);
+            mat.LightPosition[2] = new Vector3(-10, -5, 5);
+            mat.LightPosition[3] = new Vector3(10, -5, 5);
             for (var i = 0; i < 2; i++)
             {
-                var model = new CModel(Content.Load<Model>("Bench"), modelsPositions[i], Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
+                var model = new CModel(Content.Load<Model>("Bench"), modelsPositions[i],
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
                 model.SetModelEffect(effect, true);
                 model.Material = mat;
                 models.Add(model);
             }
-
-            var advertModel = new CModel(Content.Load<Model>("billboard_a_2012"), modelsPositions[2], Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.9f), GraphicsDevice);
-            advertModel.SetModelEffect(effect, true);
-            advertModel.Material = mat;
-            models.Add(advertModel);
-
-            base.Initialize();
+            for (var i = 2; i < 4; i++)
+            {
+                var advertModel = new CModel(Content.Load<Model>("billboard_a_2012"), modelsPositions[i],
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                    Matrix.CreateScale(0.9f), GraphicsDevice);
+                advertModel.SetModelEffect(effect, true);
+                advertModel.Material = mat;
+                models.Add(advertModel);
+            }
         }
 
         private void LoadVertices()
@@ -73,6 +94,9 @@ namespace GK1
 
         protected override void Update(GameTime gameTime)
         {
+            var currentKeyboardState = Keyboard.GetState();
+            if (currentKeyboardState.IsKeyDown(Keys.Escape))
+                Exit();
             camera.Update(gameTime);
             UpdateLightsColor(gameTime);
             base.Update(gameTime);
@@ -80,11 +104,15 @@ namespace GK1
 
         private void UpdateLightsColor(GameTime gameTime)
         {
+            var black = Color.Black.ToVector3();
+            var light = new Vector3(.85f, .85f, .85f);
             var r = new Random();
             if (gameTime.TotalGameTime.TotalMilliseconds - PrevLightUpdateTime.TotalMilliseconds > 500)
             {
-                var newColor = new Color(r.Next(255), r.Next(255), r.Next(255));
-                mat.LightColor[0] = newColor.ToVector3();
+                if (r.Next(2) == 0)
+                    mat.LightColor[2] = black;
+                else
+                    mat.LightColor[2] = light;
                 PrevLightUpdateTime = gameTime.TotalGameTime;
             }
         }
