@@ -13,6 +13,7 @@ namespace GK1
         private Effect effect;
         private Camera camera;
         private List<CModel> models = new List<CModel>();
+        private Texture2D metroTexture;
 
 
         public Game1()
@@ -25,6 +26,7 @@ namespace GK1
         {
             LoadVertices();
             effect = Content.Load<Effect>("Shader");
+            metroTexture = Content.Load<Texture2D>("metro");
 
             camera = new Camera(graphics.GraphicsDevice);
             var modelsPositions = new List<Vector3> { new Vector3(0, 0, 0), new Vector3(10, 0, 0)};
@@ -84,9 +86,10 @@ namespace GK1
 
         private void DrawGround()
         {
-            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
+            //effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
+            effect.Parameters["BasicTexture"].SetValue(metroTexture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
-            effect.Parameters["TextureEnabled"].SetValue(false);
+            effect.Parameters["TextureEnabled"].SetValue(true);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
             effect.Parameters["World"].SetValue(Matrix.CreateScale(15f) * Matrix.CreateTranslation(new Vector3(0, 0, 15f)) * camera.WorldMatrix);
 
@@ -107,6 +110,7 @@ namespace GK1
         {
             var vertices = new VertexPositionNormalTexture[36];
             var texcoords = new Vector2(0f, 0f);
+            var texcoordsArr = new [] {new Vector2(0f, 0f), new Vector2(1f, 1f) , new Vector2(0f, 1f) , new Vector2(1f, 1f),new Vector2(0f, 0f),  new Vector2(1f, 0f) };
 
             var face = new Vector3[6];
             //TopLeft
@@ -121,7 +125,6 @@ namespace GK1
             face[4] = new Vector3(1f, -1f, 0.0f);
             //TopRight
             face[5] = new Vector3(1f, 1f, 0.0f);
-
             //front face
             for (int i = 0; i <= 2; i++)
             {
@@ -131,10 +134,10 @@ namespace GK1
 
             //back face
 
-            for (int i = 0; i <= 2; i++)
+            for (int i = 0, j = 0; i <= 2; i++)
             {
-                vertices[i + 6] = new VertexPositionNormalTexture(face[2 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoords);
-                vertices[i + 6 + 3] = new VertexPositionNormalTexture(face[5 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoords);
+                vertices[i + 6] = new VertexPositionNormalTexture(face[2 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoordsArr[j++]);
+                vertices[i + 6 + 3] = new VertexPositionNormalTexture(face[5 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoordsArr[j++]);
             }
 
             //left face
@@ -165,11 +168,11 @@ namespace GK1
             }
 
             //Bottom face
-
-            for (int i = 0; i <= 2; i++)
+            
+            for (int i = 0, j = 0; i <= 2; i++)
             {
-                vertices[i + 30] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoords);
-                vertices[i + 30 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoords);
+                vertices[i + 30] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoordsArr[j++]);
+                vertices[i + 30 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoordsArr[j++]);
             }
 
             return vertices;
