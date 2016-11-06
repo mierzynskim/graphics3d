@@ -43,7 +43,8 @@ namespace GK1
                 new Vector3(-10, 0, 0),
                 new Vector3(10, 0, 0),
                 new Vector3(-10, 10, 0),
-                new Vector3(10, 10, 0)
+                new Vector3(10, 10, 0),
+                new Vector3(-10, -14, 1)
             };
             mat = new LightingMaterial
             {
@@ -78,6 +79,13 @@ namespace GK1
                 advertModel.Material = mat;
                 models.Add(advertModel);
             }
+
+            var man = new CModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                    Matrix.CreateScale(0.65f), GraphicsDevice);
+            man.SetModelEffect(effect, true);
+            man.Material = mat;
+            models.Add(man);
         }
 
         private void LoadVertices()
