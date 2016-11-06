@@ -12,14 +12,11 @@ namespace GK1
 {
     public class Camera
     {
-        // We need this to calculate the aspectRatio
-        // in the ProjectionMatrix property.
-        GraphicsDevice graphicsDevice;
-
-        public Vector3 Position { get; private set; } = new Vector3(0, 0, 10);
-
+        private readonly GraphicsDevice graphicsDevice;
         private float angleZ;
         private float angleX;
+
+        public Vector3 Position { get; private set; } = new Vector3(0, 0, 10);
 
         public Matrix ViewMatrix
         {
@@ -72,14 +69,12 @@ namespace GK1
         private void HandleRotation(GameTime gameTime)
         {
             var currentMouseState = Mouse.GetState();
-            if (currentMouseState != originalMouseState)
-            {
-                float xDifference = currentMouseState.X - originalMouseState.X;
-                float yDifference = currentMouseState.Y - originalMouseState.Y;
-                angleZ -= 0.3f * xDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
-                angleX -= 0.3f * yDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
-                Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
-            }
+            if (currentMouseState == originalMouseState) return;
+            float xDifference = currentMouseState.X - originalMouseState.X;
+            float yDifference = currentMouseState.Y - originalMouseState.Y;
+            angleZ -= 0.3f * xDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
+            angleX -= 0.3f * yDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
+            Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
         }
 
         private void HandleWsadMoves(GameTime gameTime)

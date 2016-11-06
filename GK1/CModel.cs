@@ -11,7 +11,8 @@ namespace GK1
 
         public Model Model { get; private set; }
         public Material Material { get; set; }
-        private Matrix[] modelTransforms;
+
+        private readonly Matrix[] modelTransforms;
 
         private GraphicsDevice graphicsDevice;
         public CModel(Model model, Vector3 position, Matrix rotation, Matrix scale, GraphicsDevice graphicsDevice)
@@ -43,15 +44,13 @@ namespace GK1
 
         public void Draw(Camera camera)
         {
-            Matrix baseWorld = Scale * Rotation * Matrix.CreateTranslation(Position);
-
-            foreach (ModelMesh mesh in Model.Meshes)
+            var baseWorld = Scale * Rotation * Matrix.CreateTranslation(Position);
+            foreach (var mesh in Model.Meshes)
             {
-                // Calculate each mesh's world matrix
-                Matrix localWorld = modelTransforms[mesh.ParentBone.Index]
+                var localWorld = modelTransforms[mesh.ParentBone.Index]
                      * baseWorld;
 
-                foreach (ModelMeshPart part in mesh.MeshParts)
+                foreach (var part in mesh.MeshParts)
                 {
                     var effect = part.Effect;
                     effect.Parameters["World"].SetValue(localWorld);
@@ -59,8 +58,6 @@ namespace GK1
                     effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
                     Material.SetEffectParameters(effect);
                 }
-
-                // Draw the mesh
                 mesh.Draw();
             }
         }
@@ -70,24 +67,18 @@ namespace GK1
             foreach (var mesh in Model.Meshes)
                 foreach (var part in mesh.MeshParts)
                 {
-                    Effect toSet = effect;
-
-                    // Copy the effect if necessary
+                    var toSet = effect;
                     if (copyEffect)
                         toSet = effect.Clone();
 
-                    MeshTag tag = ((MeshTag)part.Tag);
-
-                    // If this ModelMeshPart has a texture, set it to the effect
-                    if (tag.Texture != null)
+                    var tag = ((MeshTag)part.Tag);
+                    if (tag.Texture1 != null)
                     {
-                        SetEffectParameter(toSet, "BasicTexture", tag.Texture);
+                        SetEffectParameter(toSet, "BasicTexture", tag.Texture1);
                         SetEffectParameter(toSet, "TextureEnabled", true);
                     }
                     else
                         SetEffectParameter(toSet, "TextureEnabled", false);
-
-                    // Set our remaining parameters to the effect
                     SetEffectParameter(toSet, "DiffuseColor", tag.Color);
                     SetEffectParameter(toSet, "SpecularPower", tag.SpecularPower);
 
@@ -95,8 +86,6 @@ namespace GK1
                 }
         }
 
-        // Sets the specified effect parameter to the given effect, if it
-        // has that parameter
         private void SetEffectParameter(Effect effect, string paramName, object val)
         {
             if (effect.Parameters[paramName] == null)

@@ -6,16 +6,16 @@ namespace GK1
     public class MeshTag
 
     {
-        public Vector3 Color;
-        public Texture2D Texture;
-        public float SpecularPower;
+        public Vector3 Color { get; }
+        public Texture2D Texture1 { get; }
+        public float SpecularPower { get; }
         public Effect CachedEffect = null;
 
-        public MeshTag(Vector3 Color, Texture2D Texture, float SpecularPower)
+        public MeshTag(Vector3 color, Texture2D texture, float specularPower)
         {
-            this.Color = Color;
-            this.Texture = Texture;
-            this.SpecularPower = SpecularPower;
+            this.Color = color;
+            this.Texture1 = texture;
+            this.SpecularPower = specularPower;
         }
     }
 }
