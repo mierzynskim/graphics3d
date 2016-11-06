@@ -15,6 +15,7 @@ namespace GK1
         private List<CModel> models = new List<CModel>();
         private Texture2D metroTexture;
         private LightingMaterial mat;
+        private VertexPositionNormalTexture[] platformVertex;
 
 
         public Game1()
@@ -46,7 +47,7 @@ namespace GK1
             };
             mat = new LightingMaterial
             {
-                AmbientColor = Color.Gray.ToVector3()*.15f,
+                AmbientColor = Color.Gray.ToVector3() * .15f,
                 LightColor = new[]
                 {
                     new Vector3(0f, 0.5f, 0.5f),
@@ -54,7 +55,7 @@ namespace GK1
                     new Vector3(.85f, .85f, .85f),
                     new Vector3(.85f, .85f, .85f),
                 },
-                LightTypes = new[] {LightType.Reflector, LightType.Reflector, LightType.Point, LightType.Point},
+                LightTypes = new[] { LightType.Reflector, LightType.Reflector, LightType.Point, LightType.Point },
             };
             mat.LightDirection[0] = new Vector3(-10, 10, 5);
             mat.LightDirection[1] = new Vector3(10, 10, 5);
@@ -71,7 +72,7 @@ namespace GK1
             for (var i = 2; i < 4; i++)
             {
                 var advertModel = new CModel(Content.Load<Model>("billboard_a_2012"), modelsPositions[i],
-                    Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                     Matrix.CreateScale(0.9f), GraphicsDevice);
                 advertModel.SetModelEffect(effect, true);
                 advertModel.Material = mat;
@@ -82,6 +83,7 @@ namespace GK1
         private void LoadVertices()
         {
             floorVerts = MakeCube();
+            CreatePlatformFinal();
         }
 
         protected override void LoadContent()
@@ -124,6 +126,7 @@ namespace GK1
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
             DrawGround();
+            DrawPlatform();
             foreach (var cModel in models)
             {
                 cModel.Material = mat;
@@ -135,7 +138,7 @@ namespace GK1
 
         private void DrawGround()
         {
-            //effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
+            effect.Parameters["AmbientColor"].SetValue(Color.Gray.ToVector3() * .15f);
             effect.Parameters["BasicTexture"].SetValue(metroTexture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
@@ -152,6 +155,28 @@ namespace GK1
                     floorVerts,
                     0,
                     floorVerts.Length / 3);
+            }
+        }
+
+        private void DrawPlatform()
+        {
+            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
+            effect.Parameters["BasicTexture"].SetValue(metroTexture);
+            effect.Parameters["View"].SetValue(camera.ViewMatrix);
+            effect.Parameters["TextureEnabled"].SetValue(true);
+            effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
+            effect.Parameters["World"].SetValue(Matrix.CreateScale(0.2f) * Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateTranslation(new Vector3(0, -13, 15f)) *  camera.WorldMatrix);
+
+
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+
+                graphics.GraphicsDevice.DrawUserPrimitives(
+                    PrimitiveType.TriangleList,
+                    platformVertex,
+                    0,
+                    platformVertex.Length / 3);
             }
         }
 
@@ -225,6 +250,49 @@ namespace GK1
             }
 
             return vertices;
+        }
+
+        private void CreatePlatformFinal()
+        {
+            var normalize = new Vector3(0, 0, 1);
+            Vector2 texture = Vector2.Zero;
+
+            var length = 75;
+            var wight = 10;
+            var height = 80;
+
+
+            platformVertex = new VertexPositionNormalTexture[18];
+            //Lewyybok
+            platformVertex[0] = new VertexPositionNormalTexture(new Vector3(-wight, -height, -length), normalize, texture);
+            platformVertex[1] = new VertexPositionNormalTexture(new Vector3(-wight, -height + 10, -length), normalize, texture);
+            platformVertex[2] = new VertexPositionNormalTexture(new Vector3(-wight, -height, length), normalize, texture);
+            platformVertex[3] = platformVertex[1];
+            platformVertex[4] = new VertexPositionNormalTexture(new Vector3(-wight, -height + 10, length), normalize, texture);
+            platformVertex[5] = platformVertex[2];
+            //gora
+            platformVertex[6] = platformVertex[1];
+            platformVertex[7] = new VertexPositionNormalTexture(new Vector3(wight, -height + 10, -length), normalize, texture);
+            platformVertex[8] = platformVertex[4];
+            platformVertex[9] = platformVertex[7];
+            platformVertex[10] = new VertexPositionNormalTexture(new Vector3(wight, -height + 10, length), normalize, texture);
+            platformVertex[11] = platformVertex[4];
+            //prawybok
+            platformVertex[12] = platformVertex[7];
+            platformVertex[13] = new VertexPositionNormalTexture(new Vector3(wight, -height, -length), normalize, texture);
+            platformVertex[14] = platformVertex[10];
+            platformVertex[15] = platformVertex[13];
+            platformVertex[16] = new VertexPositionNormalTexture(new Vector3(wight, -height, length), normalize, texture);
+            platformVertex[17] = platformVertex[10];
+            ////przod
+            //_platformVerts[18].Position = new Vector3(-40, -40, 40);
+            //_platformVerts[19].Position = new Vector3(-40, 40, 40);
+            //_platformVerts[20].Position = _floorVerts[0].Position;
+            //_platformVerts[21].Position = _floorVerts[19].Position;
+            //_platformVerts[22].Position = _floorVerts[1].Position;
+            //_platformVerts[23].Position = _floorVerts[0].Position;
+
+
         }
     }
 }
