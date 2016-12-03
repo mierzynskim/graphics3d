@@ -10,11 +10,11 @@ texture BasicTexture;
 
 sampler BasicTextureSampler = sampler_state {
 	texture = <BasicTexture>;
-	MinFilter = Anisotropic; // Minification Filter
-	MagFilter = Anisotropic; // Magnification Filter
-	MipFilter = Linear; // Mip-mapping
-	AddressU = Wrap; // Address Mode for U Coordinates
-	AddressV = Wrap; // Address Mode for V Coordinates
+	MinFilter = Anisotropic; 
+	MagFilter = Anisotropic;
+	MipFilter = Linear; 
+	AddressU = Wrap; 
+	AddressV = Wrap; 
 };
 
 bool TextureEnabled = true;
@@ -64,29 +64,23 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 
 float4 AddReflectorLight(int i, VertexShaderOutput input)
 {
-	// Start with diffuse color
 	float3 color = DiffuseColor;
 
-	// Texture if necessary
 	if (TextureEnabled)
 		color *= tex2D(BasicTextureSampler, input.UV);
 
-	// Start with ambient lighting
 	float3 lighting = AmbientColor;
 
 	float3 lightDir = normalize(LightDirection[i]);
 	float3 normal = normalize(input.Normal);
 
-	// Add lambertian lighting
 	lighting += saturate(dot(lightDir, normal)) * LightColor[i];
 
 	float3 refl = reflect(lightDir, normal);
 	float3 view = normalize(input.ViewDirection);
 
-	// Add specular highlights
 	lighting += pow(saturate(dot(refl, view)), SpecularPower) * SpecularColor;
 
-	// Calculate final color
 	float3 output = saturate(lighting) * color;
 
 	return float4(output, 1);
@@ -120,18 +114,6 @@ float4 CalculateLights(VertexShaderOutput input)
 	outColor += AddReflectorLight(1, input);
 	outColor += AddPointLight(2, input);
 	outColor += AddPointLight(3, input);
-	for (int i = 0; i < NUM_LIGHTS; i++)
-	{
-		if (LightType[i] == 0)
-		{
-			//outColor += AddReflectorLight(i, input);
-		}
-
-		else if (LightType[i] == 1)
-		{
-			//outColor += AddPointLight(i, input);
-		}
-	}
 
 	return outColor;
 }
