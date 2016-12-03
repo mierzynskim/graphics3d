@@ -72,17 +72,20 @@ namespace GK1
                     [3] = new Vector3(10, -5, 5)
                 },
             };
+            var benchModel = Content.Load<Model>("Bench");
             for (var i = 0; i < 2; i++)
             {
-                var model = new CModel(Content.Load<Model>("Bench"), modelsPositions[i],
+                var model = new CModel(benchModel, modelsPositions[i],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
                 model.SetModelEffect(effect, true);
                 model.Material = mat;
                 models.Add(model);
             }
+            var billboard = Content.Load<Model>("billboard_a_2012");
             for (var i = 2; i < 4; i++)
             {
-                var advertModel = new CModel(Content.Load<Model>("billboard_a_2012"), modelsPositions[i],
+
+                var advertModel = new CModel(billboard, modelsPositions[i],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                     Matrix.CreateScale(0.9f), GraphicsDevice);
                 advertModel.SetModelEffect(effect, true);
