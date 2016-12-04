@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 namespace GK1
 {
     public class MeshTag
-
     {
         public Vector3 Color { get; }
         public Texture2D Texture1 { get; }

@@ -42,6 +42,7 @@
     <Compile Include="CModel.cs" />
     <Compile Include="Direction.cs" />
     <Compile Include="Game1.cs" />
+    <Compile Include="LoadedModel.cs" />
     <Compile Include="Material.cs" />
     <Compile Include="MeshTag.cs" />
     <Compile Include="Program.cs" />

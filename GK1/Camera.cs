@@ -23,9 +23,7 @@ namespace GK1
             get
             {
                 var lookAtVector = new Vector3(0, -1, -.5f);
-                // We'll create a rotation matrix using our angle
                 var rotationMatrix = Matrix.Multiply(Matrix.CreateRotationZ(angleZ), Matrix.CreateRotationX(angleX));
-                // Then we'll modify the vector using this matrix:
                 lookAtVector = Vector3.Transform(lookAtVector, rotationMatrix);
                 lookAtVector += Position;
 

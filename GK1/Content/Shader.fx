@@ -57,7 +57,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	output.WorldPosition = worldPosition;
 	output.UV = input.UV;
 	output.Normal = mul(input.Normal, World);
-	output.ViewDirection = worldPosition - CameraPosition;
+	output.ViewDirection = worldPosition - LightPosition[1];
 
 	return output;
 }
@@ -110,7 +110,7 @@ float4 AddPointLight(int i, VertexShaderOutput input)
 float4 CalculateLights(VertexShaderOutput input)
 {
 	float4 outColor = float4(0, 0, 0, 0);
-	outColor += AddReflectorLight(0, input);
+	//outColor += AddReflectorLight(0, input);
 	outColor += AddReflectorLight(1, input);
 	outColor += AddPointLight(2, input);
 	outColor += AddPointLight(3, input);

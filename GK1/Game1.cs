@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -9,7 +10,7 @@ namespace GK1
     public class Game1 : Game
     {
         private readonly GraphicsDeviceManager graphics;
-        private readonly List<CModel> models = new List<CModel>();
+        private readonly List<LoadedModel> loadedModels = new List<LoadedModel>();
         private VertexPositionNormalTexture[] platformVertex;
         private VertexPositionNormalTexture[] floorVerts;
         private Effect effect;
@@ -55,50 +56,52 @@ namespace GK1
                 AmbientColor = Color.Gray.ToVector3() * .15f,
                 LightColor = new[]
                 {
-                    new Vector3(0f, 0.5f, 0.5f),
-                    new Vector3(0.5f, 0f, 0.5f),
+                    new Vector3(.85f, .85f, .85f),
+                    new Vector3(.6f, .85f, .85f),
                     new Vector3(.85f, .85f, .85f),
                     new Vector3(.85f, .85f, .85f),
                 },
                 LightTypes = new[] { LightType.Reflector, LightType.Reflector, LightType.Point, LightType.Point },
                 LightDirection =
                 {
-                    [0] = new Vector3(-10, 10, 5),
-                    [1] = new Vector3(10, 10, 5)
+                    [0] = new Vector3(5, -10, 5),
+                    [1] = new Vector3(-10, -10, 5)
                 },
                 LightPosition =
                 {
-                    [2] = new Vector3(-10, -5, 5),
-                    [3] = new Vector3(10, -5, 5)
+                    [0] = new Vector3(-10, 10, 5),
+                    [1] = new Vector3(10, 10, 5),
+                    [2] = new Vector3(10, 0, 5),
+                    [3] = new Vector3(-10, 0, 5)
                 },
             };
             var benchModel = Content.Load<Model>("Bench");
             for (var i = 0; i < 2; i++)
             {
-                var model = new CModel(benchModel, modelsPositions[i],
+                var model = new LoadedModel(benchModel, modelsPositions[i],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
                 model.SetModelEffect(effect, true);
                 model.Material = mat;
-                models.Add(model);
+                loadedModels.Add(model);
             }
             var billboard = Content.Load<Model>("billboard_a_2012");
             for (var i = 2; i < 4; i++)
             {
 
-                var advertModel = new CModel(billboard, modelsPositions[i],
+                var advertModel = new LoadedModel(billboard, modelsPositions[i],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                     Matrix.CreateScale(0.9f), GraphicsDevice);
                 advertModel.SetModelEffect(effect, true);
                 advertModel.Material = mat;
-                models.Add(advertModel);
+                loadedModels.Add(advertModel);
             }
 
-            var man = new CModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
+            var man = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                     Matrix.CreateScale(0.65f), GraphicsDevice);
             man.SetModelEffect(effect, true);
             man.Material = mat;
-            models.Add(man);
+            loadedModels.Add(man);
         }
 
         private void LoadVertices()
@@ -116,6 +119,8 @@ namespace GK1
             var currentKeyboardState = Keyboard.GetState();
             if (currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
+            if (currentKeyboardState.IsKeyDown(Keys.Space))
+                graphics.PreferMultiSampling = !graphics.PreferMultiSampling;
             camera.Update(gameTime);
             UpdateLightsColor(gameTime);
             base.Update(gameTime);
@@ -142,7 +147,7 @@ namespace GK1
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
             DrawGround();
             DrawPlatform();
-            foreach (var cModel in models)
+            foreach (var cModel in loadedModels)
             {
                 cModel.Material = mat;
                 cModel.Draw(camera);
@@ -153,7 +158,21 @@ namespace GK1
 
         private void DrawGround()
         {
-            effect.Parameters["AmbientColor"].SetValue(Color.Gray.ToVector3() * .15f);
+
+            effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
+            effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
+
+            effect.Parameters["LightColor"]?.SetValue(mat.LightColor);
+
+            effect.Parameters["SpecularColor"]?.SetValue(mat.SpecularColor);
+
+            effect.Parameters["LightAttenuation"]?.SetValue(
+                mat.LightAttenuation);
+
+            effect.Parameters["LightFalloff"]?.SetValue(mat.LightFalloff);
+            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float)x).ToArray());
+
+            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
             effect.Parameters["BasicTexture"].SetValue(metroTexture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
@@ -174,6 +193,20 @@ namespace GK1
 
         private void DrawPlatform()
         {
+
+            effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
+            effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
+
+            effect.Parameters["LightColor"]?.SetValue(mat.LightColor);
+
+            effect.Parameters["SpecularColor"]?.SetValue(mat.SpecularColor);
+
+            effect.Parameters["LightAttenuation"]?.SetValue(
+                mat.LightAttenuation);
+
+            effect.Parameters["LightFalloff"]?.SetValue(mat.LightFalloff);
+            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float)x).ToArray());
+
             effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
             effect.Parameters["BasicTexture"].SetValue(metroTexture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
@@ -223,24 +256,24 @@ namespace GK1
 
             for (int i = 0, j = 0; i <= 2; i++)
             {
-                vertices[i + 6] = new VertexPositionNormalTexture(face[2 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoordsArr[j++]);
-                vertices[i + 6 + 3] = new VertexPositionNormalTexture(face[5 - i] - Vector3.UnitZ, -Vector3.UnitZ, texcoordsArr[j++]);
+                vertices[i + 6] = new VertexPositionNormalTexture(face[2 - i] - Vector3.UnitZ, Vector3.UnitZ, texcoordsArr[j++]);
+                vertices[i + 6 + 3] = new VertexPositionNormalTexture(face[5 - i] - Vector3.UnitZ, Vector3.UnitZ, texcoordsArr[j++]);
             }
 
             //left face
             Matrix RotY90 = Matrix.CreateRotationY(-(float)Math.PI / 2f);
             for (int i = 0; i <= 2; i++)
             {
-                vertices[i + 12] = new VertexPositionNormalTexture(Vector3.Transform(face[i], RotY90) - Vector3.UnitX, -Vector3.UnitX, texcoords);
-                vertices[i + 12 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[i + 3], RotY90) - Vector3.UnitX, -Vector3.UnitX, texcoords);
+                vertices[i + 12] = new VertexPositionNormalTexture(Vector3.Transform(face[i], RotY90) - Vector3.UnitX, Vector3.UnitZ, texcoords);
+                vertices[i + 12 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[i + 3], RotY90) - Vector3.UnitX, Vector3.UnitZ, texcoords);
             }
 
             //Right face
 
             for (int i = 0; i <= 2; i++)
             {
-                vertices[i + 18] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotY90) + Vector3.UnitX, Vector3.UnitX, texcoords);
-                vertices[i + 18 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotY90) + Vector3.UnitX, Vector3.UnitX, texcoords);
+                vertices[i + 18] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotY90) + Vector3.UnitX, Vector3.UnitZ, texcoords);
+                vertices[i + 18 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotY90) + Vector3.UnitX, Vector3.UnitZ, texcoords);
 
             }
 
@@ -249,8 +282,8 @@ namespace GK1
             Matrix RotX90 = Matrix.CreateRotationX(-(float)Math.PI / 2f);
             for (int i = 0; i <= 2; i++)
             {
-                vertices[i + 24] = new VertexPositionNormalTexture(Vector3.Transform(face[i], RotX90) + Vector3.UnitY, Vector3.UnitY, texcoords);
-                vertices[i + 24 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[i + 3], RotX90) + Vector3.UnitY, Vector3.UnitY, texcoords);
+                vertices[i + 24] = new VertexPositionNormalTexture(Vector3.Transform(face[i], RotX90) + Vector3.UnitY, Vector3.UnitZ, texcoords);
+                vertices[i + 24 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[i + 3], RotX90) + Vector3.UnitY, Vector3.UnitZ, texcoords);
 
             }
 
@@ -258,8 +291,8 @@ namespace GK1
 
             for (int i = 0, j = 0; i <= 2; i++)
             {
-                vertices[i + 30] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoordsArr[j++]);
-                vertices[i + 30 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotX90) - Vector3.UnitY, -Vector3.UnitY, texcoordsArr[j++]);
+                vertices[i + 30] = new VertexPositionNormalTexture(Vector3.Transform(face[2 - i], RotX90) - Vector3.UnitY, Vector3.UnitZ, texcoordsArr[j++]);
+                vertices[i + 30 + 3] = new VertexPositionNormalTexture(Vector3.Transform(face[5 - i], RotX90) - Vector3.UnitY, Vector3.UnitZ, texcoordsArr[j++]);
             }
 
             return vertices;
