@@ -19,6 +19,9 @@ namespace GK1
         private LightingMaterial mat;
         private TimeSpan prevLightUpdateTime;
 
+        private readonly Random random = new Random();
+        private ParticleSystem smoke;
+
 
         public Game1()
         {
@@ -30,6 +33,9 @@ namespace GK1
         {
             LoadVertices();
             effect = Content.Load<Effect>("Shader");
+            smoke = new ParticleSystem(GraphicsDevice, Content,
+                    Content.Load<Texture2D>("smoke"), 400, new Vector2(10), 6,
+                    new Vector3(0, 2, 10), 5f);
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
@@ -42,7 +48,7 @@ namespace GK1
             var bench2Position = new Vector3(10, 0, 0);
             var billboard1Position = new Vector3(-10, 10, 0);
             var billboard2Position = new Vector3(10, 10, 0);
-            var suicideManPosition = new Vector3(-10, -14, 1);
+            var suicideManPosition = new Vector3(-10, -36, 1);
             var modelsPositions = new List<Vector3>
             {
                 bench1Position,
@@ -122,8 +128,34 @@ namespace GK1
             if (currentKeyboardState.IsKeyDown(Keys.Space))
                 graphics.PreferMultiSampling = !graphics.PreferMultiSampling;
             camera.Update(gameTime);
+            UpdateParticle();
+
             UpdateLightsColor(gameTime);
             base.Update(gameTime);
+        }
+
+        private void UpdateParticle()
+        {
+            // Generate a direction within 15 degrees of (0, 1, 0)
+            var offset = new Vector3(MathHelper.ToRadians(10.0f));
+            var randAngle = Vector3.Up + RandVec3(-offset, offset);
+            // Generate a position between (-400, 0, -400) and (400, 0, 400)
+            var randPosition = RandVec3(new Vector3(-5), new Vector3(5));
+            // Generate a speed between 600 and 900
+            var randSpeed = (float) random.NextDouble()*3 + 6;
+            //ps.AddParticle(randPosition, randAngle, randSpeed);
+            smoke.AddParticle(randPosition + new Vector3(0, 10, 0), randAngle, randSpeed);
+            smoke.Update();
+            //ps.Update();
+        }
+
+        // Returns a random Vector3 between min and max
+        private Vector3 RandVec3(Vector3 min, Vector3 max)
+        {
+            return new Vector3(
+            min.X + (float)random.NextDouble() * (max.X - min.X),
+            min.Y + (float)random.NextDouble() * (max.Y - min.Y),
+            min.Z + (float)random.NextDouble() * (max.Z - min.Z));
         }
 
         private void UpdateLightsColor(GameTime gameTime)
@@ -152,6 +184,8 @@ namespace GK1
                 cModel.Material = mat;
                 cModel.Draw(camera);
             }
+            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+
 
             base.Draw(gameTime);
         }
@@ -177,7 +211,7 @@ namespace GK1
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-            effect.Parameters["World"].SetValue(Matrix.CreateScale(15f) * Matrix.CreateTranslation(new Vector3(0, 0, 15f)) * camera.WorldMatrix);
+            effect.Parameters["World"].SetValue(Matrix.CreateScale(40f) * Matrix.CreateTranslation(new Vector3(0, 0, 40f)) * camera.WorldMatrix);
 
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
@@ -212,7 +246,7 @@ namespace GK1
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-            effect.Parameters["World"].SetValue(Matrix.CreateScale(0.2f) * Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateTranslation(new Vector3(0, -13, 15f)) * camera.WorldMatrix);
+            effect.Parameters["World"].SetValue(Matrix.CreateScale(0.2f) * Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateTranslation(new Vector3(0, -37, 15f)) * camera.WorldMatrix);
 
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
@@ -303,7 +337,7 @@ namespace GK1
             var normalize = new Vector3(0, 0, 1);
             var texture = Vector2.Zero;
 
-            const int length = 75;
+            const int length = 200;
             const int wight = 10;
             const int height = 80;
 

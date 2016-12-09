@@ -18,6 +18,9 @@ namespace GK1
 
         public Vector3 Position { get; private set; } = new Vector3(0, 0, 10);
 
+        public Vector3 Up { get; private set; }
+        public Vector3 Right { get; private set; }
+
         public Matrix ViewMatrix
         {
             get
@@ -29,7 +32,10 @@ namespace GK1
 
                 var upVector = Vector3.UnitZ;
 
-                return Matrix.CreateLookAt(Position, lookAtVector, upVector);
+                var viewMatrix = Matrix.CreateLookAt(Position, lookAtVector, upVector);
+                Up = viewMatrix.Up;
+                Right = viewMatrix.Left;
+                return viewMatrix;
             }
         }
 
@@ -95,7 +101,7 @@ namespace GK1
             var rotationMatrix = Matrix.CreateRotationZ(angleZ);
             directionVector = Vector3.Transform(directionVector, rotationMatrix);
 
-            const float unitsPerSecond = 3;
+            const float unitsPerSecond = 7;
 
             Position += directionVector * unitsPerSecond *
                         (float)gameTime.ElapsedGameTime.TotalSeconds;
