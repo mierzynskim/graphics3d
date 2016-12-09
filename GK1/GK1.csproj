@@ -46,6 +46,7 @@
     <Compile Include="Material.cs" />
     <Compile Include="MeshTag.cs" />
     <Compile Include="ParticleSystem.cs" />
+    <Compile Include="Platform.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
