@@ -30,10 +30,10 @@ namespace GK1
         public float FogEnd { get; set; } = 10;
         public float FogIntensity { get; set; } = 0.3f;
 
-
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
+
             Content.RootDirectory = "Content";
         }
 
@@ -47,6 +47,10 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
+            //graphics.PreferredBackBufferWidth = GraphicsDevice.DisplayMode.Width;
+            //graphics.PreferredBackBufferHeight = GraphicsDevice.DisplayMode.Height;
+            //graphics.IsFullScreen = true;
+            //graphics.ApplyChanges();
             base.Initialize();
         }
 
@@ -151,7 +155,6 @@ namespace GK1
             //ps.AddParticle(randPosition, randAngle, randSpeed);
             smoke.AddParticle(randPosition + new Vector3(0, 10, 0), randAngle, randSpeed);
             smoke.Update();
-            //ps.Update();
         }
 
         // Returns a random Vector3 between min and max
@@ -235,41 +238,16 @@ namespace GK1
                 cModel.Draw(camera);
             }
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-
-
             base.Draw(gameTime);
         }
 
         private void DrawGround()
         {
-            effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
-            effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
-            effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
-            effect.Parameters[nameof(FogIntensity)]?.SetValue(FogIntensity);
-            effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
-            effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
-
-            effect.Parameters["LightColor"]?.SetValue(mat.LightColor);
-
-            effect.Parameters["SpecularColor"]?.SetValue(mat.SpecularColor);
-
-            effect.Parameters["LightAttenuation"]?.SetValue(
-                mat.LightAttenuation);
-
-            effect.Parameters["LightFalloff"]?.SetValue(mat.LightFalloff);
-            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float)x).ToArray());
-
-            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
-            effect.Parameters["BasicTexture"].SetValue(metroTexture);
-            effect.Parameters["View"].SetValue(camera.ViewMatrix);
-            effect.Parameters["TextureEnabled"].SetValue(true);
-            effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-            effect.Parameters["World"].SetValue(Matrix.CreateScale(40f) * Matrix.CreateTranslation(new Vector3(0, 0, 40f)) * camera.WorldMatrix);
-
+            var worldMatrix = Matrix.CreateScale(40f) * Matrix.CreateTranslation(new Vector3(0, 0, 40f)) * camera.WorldMatrix;
+            SetEffectParameters(worldMatrix);
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-
                 graphics.GraphicsDevice.DrawUserPrimitives(
                     PrimitiveType.TriangleList,
                     floorVerts,
@@ -280,6 +258,24 @@ namespace GK1
 
         private void DrawPlatform()
         {
+            var worldMatrix = Matrix.CreateScale(0.2f)*Matrix.CreateRotationY(MathHelper.ToRadians(90f))*
+                              Matrix.CreateRotationX(MathHelper.ToRadians(90f))*
+                              Matrix.CreateTranslation(new Vector3(0, -37, 15f))*camera.WorldMatrix;
+            SetEffectParameters(worldMatrix);
+
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                graphics.GraphicsDevice.DrawUserPrimitives(
+                    PrimitiveType.TriangleList,
+                    platformVertex,
+                    0,
+                    platformVertex.Length / 3);
+            }
+        }
+
+        private void SetEffectParameters(Matrix worldMatrix)
+        {
             effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
             effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
             effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
@@ -296,30 +292,15 @@ namespace GK1
                 mat.LightAttenuation);
 
             effect.Parameters["LightFalloff"]?.SetValue(mat.LightFalloff);
-            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float)x).ToArray());
+            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float) x).ToArray());
 
             effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
             effect.Parameters["BasicTexture"].SetValue(metroTexture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-            effect.Parameters["World"].SetValue(Matrix.CreateScale(0.2f) * Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateTranslation(new Vector3(0, -37, 15f)) * camera.WorldMatrix);
-
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-
-                graphics.GraphicsDevice.DrawUserPrimitives(
-                    PrimitiveType.TriangleList,
-                    platformVertex,
-                    0,
-                    platformVertex.Length / 3);
-            }
+            effect.Parameters["World"].SetValue(worldMatrix);
         }
-
-
-
-
     }
 }
 

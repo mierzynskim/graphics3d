@@ -49,6 +49,7 @@ namespace GK1
                 float nearClipPlane = 1;
                 float farClipPlane = 200;
                 float aspectRatio = graphicsDevice.Viewport.Width / (float)graphicsDevice.Viewport.Height;
+                //float aspectRatio = graphicsDevice.Viewport.Bounds.Width / (float)graphicsDevice.Viewport.Bounds.Height;
 
                 return Matrix.CreatePerspectiveFieldOfView(
                     fieldOfView, aspectRatio, nearClipPlane, farClipPlane);
@@ -59,6 +60,7 @@ namespace GK1
         {
             this.graphicsDevice = graphicsDevice;
             Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
+            //Mouse.SetPosition(graphicsDevice.Adapter.CurrentDisplayMode.Width / 2, graphicsDevice.Adapter.CurrentDisplayMode.Height / 2);
             originalMouseState = Mouse.GetState();
         }
 
@@ -79,6 +81,7 @@ namespace GK1
             angleZ -= 0.3f * xDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
             angleX -= 0.3f * yDifference * (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000;
             Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);
+            //Mouse.SetPosition(graphicsDevice.Adapter.CurrentDisplayMode.Width / 2, graphicsDevice.Adapter.CurrentDisplayMode.Height / 2);
         }
 
         private void HandleWsadMoves(GameTime gameTime)
