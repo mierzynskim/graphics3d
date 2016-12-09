@@ -202,6 +202,12 @@ namespace GK1
                 FogIntensity += 0.1f;
                 loadedModels.First().Material.FogIntensity += 0.1f;
             }
+
+            if (pressedKeys.Contains(Keys.M) && !prevPressedKeys.Contains(Keys.M))
+            {
+                FogIntensity -= 0.1f;
+                loadedModels.First().Material.FogIntensity -= 0.1f;
+            }
         }
 
         private void UpdateLightsColor(GameTime gameTime)
