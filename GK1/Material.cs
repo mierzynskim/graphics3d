@@ -10,6 +10,10 @@ namespace GK1
 {
     public class Material
     {
+        public bool FogEnabled { get; set; }
+        public float FogStart { get; set; } = 1;
+        public float FogEnd { get; set; } = 20;
+        public float FogIntensity { get; set; } = 0.3f;
         public virtual void SetEffectParameters(Effect effect)
         {
         }
@@ -32,6 +36,7 @@ namespace GK1
         public float[] LightFalloff { get; set; }
         public LightType[] LightTypes { get; set; }
 
+
         public LightingMaterial()
         {
             AmbientColor = new Vector3(.1f, .1f, .1f);
@@ -45,6 +50,10 @@ namespace GK1
 
         public override void SetEffectParameters(Effect effect)
         {
+            effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
+            effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
+            effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
+            effect.Parameters[nameof(FogIntensity)]?.SetValue(FogIntensity);
             effect.Parameters["AmbientColor"]?.SetValue(AmbientColor);
 
             effect.Parameters["LightDirection"]?.SetValue(LightDirection);

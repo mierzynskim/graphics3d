@@ -30,6 +30,12 @@ float3 LightAttenuation[NUM_LIGHTS];
 float3 LightFalloff[NUM_LIGHTS];
 float LightType[NUM_LIGHTS];
 
+float FogStart = 2;
+float FogEnd = 10;
+float3 FogColor = float3(0.5, 0.5, 0.5);
+float FogIntensity = 0.3f;
+bool FogEnabled;
+
 struct VertexShaderInput
 {
 	float4 Position : SV_POSITION;
@@ -115,7 +121,13 @@ float4 CalculateLights(VertexShaderOutput input)
 	outColor += AddPointLight(2, input);
 	outColor += AddPointLight(3, input);
 
-	return outColor;
+	float dist = length(input.ViewDirection);
+	float fog = clamp((dist - FogStart) / (FogEnd - FogStart), 0, 1);
+
+	if (FogEnabled)
+		return float4(lerp(outColor, FogColor, fog * FogIntensity), 1);
+	else
+		return outColor;
 }
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0

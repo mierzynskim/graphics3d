@@ -21,6 +21,12 @@ namespace GK1
 
         private readonly Random random = new Random();
         private ParticleSystem smoke;
+        private KeyboardState prevKeyboardState;
+
+        public bool FogEnabled { get; set; }
+        public float FogStart { get; set; } = 2;
+        public float FogEnd { get; set; } = 10;
+        public float FogIntensity { get; set; } = 0.3f;
 
 
         public Game1()
@@ -129,8 +135,9 @@ namespace GK1
                 graphics.PreferMultiSampling = !graphics.PreferMultiSampling;
             camera.Update(gameTime);
             UpdateParticle();
-
+            UpdateFogParameters(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             UpdateLightsColor(gameTime);
+            prevKeyboardState = currentKeyboardState;
             base.Update(gameTime);
         }
 
@@ -142,7 +149,7 @@ namespace GK1
             // Generate a position between (-400, 0, -400) and (400, 0, 400)
             var randPosition = RandVec3(new Vector3(-5), new Vector3(5));
             // Generate a speed between 600 and 900
-            var randSpeed = (float) random.NextDouble()*3 + 6;
+            var randSpeed = (float)random.NextDouble() * 3 + 6;
             //ps.AddParticle(randPosition, randAngle, randSpeed);
             smoke.AddParticle(randPosition + new Vector3(0, 10, 0), randAngle, randSpeed);
             smoke.Update();
@@ -156,6 +163,45 @@ namespace GK1
             min.X + (float)random.NextDouble() * (max.X - min.X),
             min.Y + (float)random.NextDouble() * (max.Y - min.Y),
             min.Z + (float)random.NextDouble() * (max.Z - min.Z));
+        }
+
+        private void UpdateFogParameters(Keys[] pressedKeys, Keys[] prevPressedKeys)
+        {
+            if (pressedKeys.Contains(Keys.F) && !prevPressedKeys.Contains(Keys.F))
+            {
+                FogEnabled = !FogEnabled;
+                loadedModels.First().Material.FogEnabled = !loadedModels.First().Material.FogEnabled;
+            }
+
+            if (pressedKeys.Contains(Keys.B) && !prevPressedKeys.Contains(Keys.B))
+            {
+                FogStart += 5f;
+                    loadedModels.First().Material.FogStart += 5f;
+            }
+
+            if (pressedKeys.Contains(Keys.V) && !prevPressedKeys.Contains(Keys.V))
+            {
+                FogStart -= 5f;
+                    loadedModels.First().Material.FogStart -= 5f;
+            }
+
+            if (pressedKeys.Contains(Keys.X) && !prevPressedKeys.Contains(Keys.X))
+            {
+                FogEnd += 5f;
+                    loadedModels.First().Material.FogEnd += 5f;
+            }
+
+            if (pressedKeys.Contains(Keys.Z) && !prevPressedKeys.Contains(Keys.Z))
+            {
+                FogEnd -= 5f;
+                    loadedModels.First().Material.FogEnd -= 5f;
+            }
+
+            if (pressedKeys.Contains(Keys.N) && !prevPressedKeys.Contains(Keys.N))
+            {
+                FogIntensity += 0.1f;
+                loadedModels.First().Material.FogIntensity += 0.1f;
+            }
         }
 
         private void UpdateLightsColor(GameTime gameTime)
@@ -192,7 +238,10 @@ namespace GK1
 
         private void DrawGround()
         {
-
+            effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
+            effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
+            effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
+            effect.Parameters[nameof(FogIntensity)]?.SetValue(FogIntensity);
             effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
             effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
 
@@ -227,6 +276,10 @@ namespace GK1
 
         private void DrawPlatform()
         {
+            effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
+            effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
+            effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
+            effect.Parameters[nameof(FogIntensity)]?.SetValue(FogIntensity);
 
             effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
             effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
