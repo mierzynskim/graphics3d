@@ -10,11 +10,6 @@ texture BasicTexture;
 
 sampler BasicTextureSampler = sampler_state {
 	texture = <BasicTexture>;
-	MinFilter = Anisotropic; 
-	MagFilter = Anisotropic;
-	MipFilter = Linear; 
-	AddressU = Wrap; 
-	AddressV = Wrap; 
 };
 
 bool TextureEnabled = true;

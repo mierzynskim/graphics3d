@@ -34,6 +34,19 @@ namespace GK1
         public float FogEnd { get; set; } = 10;
         public float FogIntensity { get; set; } = 0.3f;
 
+        public float MipMapLevelOfDetailBias { get; set; }
+
+        private FilterLevel MinFilter { get; set; } = FilterLevel.Anisotropic;
+        private FilterLevel MagFilter { get; set; } = FilterLevel.Anisotropic;
+        private FilterLevel MipFilter { get; set; } = FilterLevel.Anisotropic;
+
+        private enum FilterLevel
+        {
+            Point = 0,
+            Linear = 1,
+            Anisotropic = 2
+        }
+
 
 
         public Game1()
@@ -159,6 +172,7 @@ namespace GK1
             UpdateFogParameters(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             UpdateClip(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             UpdateLightsColor(gameTime);
+            UpdateTexturesParameters(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             prevKeyboardState = currentKeyboardState;
             base.Update(gameTime);
         }
@@ -264,6 +278,27 @@ namespace GK1
 
         }
 
+        private void UpdateTexturesParameters(Keys[] pressedKeys, Keys[] prevPressedKeys)
+        {
+            if (pressedKeys.Contains(Keys.P) && !prevPressedKeys.Contains(Keys.P))
+                Multisampling = !Multisampling;
+            if (pressedKeys.Contains(Keys.OemMinus))
+                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias - 0.1f;
+
+            if (pressedKeys.Contains(Keys.OemPlus))
+                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias + 0.1f;
+
+
+            if (pressedKeys.Contains(Keys.OemCloseBrackets) && !prevPressedKeys.Contains(Keys.OemCloseBrackets))
+                MagFilter = (FilterLevel) (((int) MagFilter + 1)%3);
+
+            if (pressedKeys.Contains(Keys.OemOpenBrackets) && !prevPressedKeys.Contains(Keys.OemOpenBrackets))
+                MipFilter = (FilterLevel) (((int) MipFilter + 1)%3);
+
+        }
+
+        private bool Multisampling { get; set; }
+
         private void UpdateLightsColor(GameTime gameTime)
         {
             var black = Color.Black.ToVector3();
@@ -284,6 +319,39 @@ namespace GK1
             //water.PreDraw(camera, gameTime);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
+
+            var ss = new SamplerState
+            {
+                Filter = TextureFilterFromMinMagMip(MinFilter, MagFilter, MipFilter),
+                MaxAnisotropy = 16,
+                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias,
+                AddressU = TextureAddressMode.Mirror,
+                AddressW = TextureAddressMode.Mirror,
+                AddressV = TextureAddressMode.Mirror,
+                BorderColor = Color.Black
+            };
+
+            var originalRasterizerState = graphics.GraphicsDevice.RasterizerState;
+            var rasterizerState = new RasterizerState { CullMode = CullMode.None };
+
+            graphics.GraphicsDevice.RasterizerState = rasterizerState;
+            graphics.GraphicsDevice.RasterizerState = originalRasterizerState;
+
+            graphics.GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+            graphics.PreferMultiSampling = Multisampling;
+            graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = Multisampling ? 4 : 0;
+            graphics.GraphicsDevice.RasterizerState = new RasterizerState
+            {
+                MultiSampleAntiAlias = Multisampling,
+                CullMode = CullMode.CullCounterClockwiseFace
+            };
+            for (int i = 0; i < 15; i++)
+                graphics.GraphicsDevice.SamplerStates[i] = ss;
+            
+
+            graphics.ApplyChanges();
             if (clipEnabled)
                 DrawWithClipPlane();
             else
@@ -321,6 +389,36 @@ namespace GK1
 
             foreach (var cModel in loadedModels)
                 cModel.SetClipPlane(clipPlane);
+        }
+
+        private TextureFilter TextureFilterFromMinMagMip(FilterLevel minFilter, FilterLevel magFilter, FilterLevel mipFilter)
+        {
+            var def = TextureFilter.Point;
+
+            if (minFilter == FilterLevel.Anisotropic && magFilter == FilterLevel.Anisotropic)
+                return TextureFilter.Anisotropic;
+
+            if (minFilter == FilterLevel.Point)
+            {
+                if (magFilter == FilterLevel.Point)
+                {
+                    if (mipFilter == FilterLevel.Point)
+                        return TextureFilter.Point;
+                    return def;
+                }
+                if (mipFilter == FilterLevel.Point)
+                    return TextureFilter.MinPointMagLinearMipPoint;
+                return TextureFilter.MinPointMagLinearMipLinear;
+            }
+            if (magFilter == FilterLevel.Point)
+            {
+                if (mipFilter == FilterLevel.Point)
+                    return TextureFilter.MinLinearMagPointMipPoint;
+                return TextureFilter.MinLinearMagPointMipLinear;
+            }
+            if (mipFilter == FilterLevel.Point)
+                return TextureFilter.LinearMipPoint;
+            return TextureFilter.Linear;
         }
     }
 }
