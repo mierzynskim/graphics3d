@@ -135,8 +135,8 @@ float4 CalculateLights(VertexShaderOutput input)
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
-	//if (ClipPlaneEnabled)
-	//	clip(dot(float4(input.WorldPosition, 1), ClipPlane));
+	if (ClipPlaneEnabled)
+		clip(dot(input.WorldPosition, ClipPlane.xyz) + ClipPlane.w);
 	return CalculateLights(input);
 }
 

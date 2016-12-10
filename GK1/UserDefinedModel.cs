@@ -27,7 +27,11 @@ namespace GK1
 
         public override void Draw(CameraAbstract camera)
         {
-            var worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * ((Camera)camera).WorldMatrix;
+            Matrix worldMatrix;
+            if (camera is TargetCamera)
+                worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * (camera).WorldMatrix;
+            else
+                worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * ((Camera)camera).WorldMatrix;
             SetEffectParameters(camera, worldMatrix);
 
             foreach (var pass in effect.CurrentTechnique.Passes)
@@ -77,13 +81,9 @@ namespace GK1
 
         public override void SetClipPlane(Vector4? plane)
         {
-            //foreach (var mesh in Model.Meshes)
-            //    foreach (var part in mesh.MeshParts)
-            //    {
-            //        part.Effect.Parameters["ClipPlaneEnabled"]?.SetValue(plane.HasValue);
-            //        if (plane.HasValue)
-            //            part.Effect.Parameters["ClipPlane"]?.SetValue(plane.Value);
-            //    }
+            effect.Parameters["ClipPlaneEnabled"].SetValue(plane.HasValue);
+            if (plane.HasValue)
+                effect.Parameters["ClipPlane"].SetValue(plane.Value);
         }
     }
 }

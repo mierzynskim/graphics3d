@@ -10,7 +10,7 @@ namespace GK1
     {
         public virtual Matrix ViewMatrix { get; protected set; }
         public virtual Matrix ProjectionMatrix { get; protected set; }
-        public virtual Matrix WorldMatrix { get; protected set; }
+        public virtual Matrix WorldMatrix { get; set; } = Matrix.Identity;
         protected GraphicsDevice GraphicsDevice { get; set; }
         public CameraAbstract(GraphicsDevice graphicsDevice)
         {

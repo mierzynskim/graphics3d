@@ -21,7 +21,7 @@ namespace GK1
         public Water(ContentManager content, GraphicsDevice graphics, Vector3 position, Vector2 size)
         {
             this.graphics = graphics;
-            waterMesh = new LoadedModel(content.Load<Model>("mirror"), position, Matrix.Identity, Matrix.Identity, graphics);
+            waterMesh = new LoadedModel(content.Load<Model>("mirror"), position, Matrix.Identity, Matrix.CreateScale(0.4f), graphics);
             waterEffect = content.Load<Effect>("WaterEffect");
             waterMesh.SetModelEffect(waterEffect, false);
             waterEffect.Parameters["viewportWidth"].SetValue((float)graphics.Viewport.Width);
@@ -47,9 +47,10 @@ namespace GK1
             Vector4 clipPlane = new Vector4(0, 1, 0, -waterMesh.Position.Y);
             // Set the render target
             graphics.SetRenderTarget(reflectionTarg);
-            graphics.Clear(Color.Black);
+            graphics.Clear(Color.CornflowerBlue);
             // Draw all objects with clip plane
-            foreach (IRenderable renderable in Objects)
+            reflectionCamera.WorldMatrix = camera.WorldMatrix;
+            foreach (var renderable in Objects)
             {
                 renderable.SetClipPlane(clipPlane);
                 renderable.Draw(reflectionCamera);

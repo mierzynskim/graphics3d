@@ -24,7 +24,7 @@ namespace GK1
         private KeyboardState prevKeyboardState;
 
         private readonly Platform platform = new Platform();
-        //private Water water;
+        private Water water;
 
         public bool FogEnabled { get; set; }
         public float FogStart { get; set; } = 2;
@@ -43,18 +43,21 @@ namespace GK1
             effect = Content.Load<Effect>("Shader");
             smoke = new ParticleSystem(GraphicsDevice, Content,
                     Content.Load<Texture2D>("smoke"), 400, new Vector2(10), 6,
-                    new Vector3(0, 2, 10), 5f);
+                    new Vector3(2, 0, 10), 10f);
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
-            //water = new Water(Content, GraphicsDevice,new Vector3(0, 0, 0));
-            //foreach (var loadedModel in loadedModels)
-            //    water.Objects.Add(loadedModel);
+            water = new Water(Content, GraphicsDevice,new Vector3(0, 0, 0), Vector2.Zero);
+            foreach (var loadedModel in loadedModels)
+                water.Objects.Add(loadedModel);
 
             //graphics.PreferredBackBufferWidth = GraphicsDevice.DisplayMode.Width;
             //graphics.PreferredBackBufferHeight = GraphicsDevice.DisplayMode.Height;
             //graphics.IsFullScreen = true;
             //graphics.ApplyChanges();
+            RasterizerState rasterizerState = new RasterizerState();
+            rasterizerState.FillMode = FillMode.WireFrame;
+            GraphicsDevice.RasterizerState = rasterizerState;
             base.Initialize();
         }
 
@@ -97,6 +100,15 @@ namespace GK1
                     [3] = new Vector3(-10, 0, 5)
                 },
             };
+            var userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, 0, 40f), Matrix.Identity, Matrix.CreateScale(40f), floorVerts, metroTexture);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
+            userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f), Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
+                                                    Matrix.CreateScale(0.2f), platformVertex, null);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
             var benchModel = Content.Load<Model>("Bench");
             for (var i = 0; i < 2; i++)
             {
@@ -124,15 +136,7 @@ namespace GK1
             man.SetModelEffect(effect, true);
             man.Material = mat;
             loadedModels.Add(man);
-            var userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, 0, 40f), Matrix.Identity, Matrix.CreateScale(40f), floorVerts, metroTexture);
-            userDefinedModel.SetModelEffect(effect, true);
-            userDefinedModel.Material = mat;
-            loadedModels.Add(userDefinedModel);
-            userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f), Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
-                                                    Matrix.CreateScale(0.2f), platformVertex, null);
-            userDefinedModel.SetModelEffect(effect, true);
-            userDefinedModel.Material = mat;
-            loadedModels.Add(userDefinedModel);
+
         }
 
         private void LoadVertices()
@@ -244,15 +248,14 @@ namespace GK1
             //water.PreDraw(camera, gameTime);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
-            //DrawGround();
-            //DrawPlatform();
-            //water.RenderReflection(camera);
             foreach (var cModel in loadedModels)
             {
                 cModel.Material = mat;
                 cModel.Draw(camera);
             }
+            //water.RenderReflection(camera);
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+            
             base.Draw(gameTime);
         }
 
