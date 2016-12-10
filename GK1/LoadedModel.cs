@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,7 +36,7 @@ namespace GK1
                     }
         }
 
-        public override void Draw(Camera camera)
+        public override void Draw(CameraAbstract camera)
         {
             var baseWorld = Scale * Rotation * Matrix.CreateTranslation(Position);
             foreach (var mesh in Model.Meshes)
@@ -56,6 +55,7 @@ namespace GK1
                 mesh.Draw();
             }
         }
+
 
         public override void SetModelEffect(Effect effect, bool copyEffect)
         {
@@ -81,32 +81,17 @@ namespace GK1
                 }
         }
 
-
-    }
-
-    public class UserDrawnModel : CModel
-    {
-        public override void Draw(Camera camera)
+        public override void SetClipPlane(Vector4? plane)
         {
-            throw new NotImplementedException();
+            foreach (var mesh in Model.Meshes)
+                foreach (var part in mesh.MeshParts)
+                {
+                    part.Effect.Parameters["ClipPlaneEnabled"]?.SetValue(plane.HasValue);
+                    if (plane.HasValue)
+                        part.Effect.Parameters["ClipPlane"]?.SetValue(plane.Value);
+                }
         }
 
-        public override void SetModelEffect(Effect effect, bool copyEffect)
-        {
-            //var toSet = effect;
-            //if (copyEffect)
-            //    toSet = effect.Clone();
 
-            //var tag = ((MeshTag)part.Tag);
-            //if (tag.Texture1 != null)
-            //{
-            //    SetEffectParameter(toSet, "BasicTexture", tag.Texture1);
-            //    SetEffectParameter(toSet, "TextureEnabled", true);
-            //}
-            //else
-            //    SetEffectParameter(toSet, "TextureEnabled", false);
-            //SetEffectParameter(toSet, "DiffuseColor", tag.Color);
-            //SetEffectParameter(toSet, "SpecularPower", tag.SpecularPower);
-        }
     }
 }

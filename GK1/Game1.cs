@@ -10,7 +10,7 @@ namespace GK1
     public class Game1 : Game
     {
         private readonly GraphicsDeviceManager graphics;
-        private readonly List<LoadedModel> loadedModels = new List<LoadedModel>();
+        private readonly List<CModel> loadedModels = new List<CModel>();
         private VertexPositionNormalTexture[] platformVertex;
         private VertexPositionNormalTexture[] floorVerts;
         private Effect effect;
@@ -24,6 +24,7 @@ namespace GK1
         private KeyboardState prevKeyboardState;
 
         private readonly Platform platform = new Platform();
+        //private Water water;
 
         public bool FogEnabled { get; set; }
         public float FogStart { get; set; } = 2;
@@ -33,7 +34,6 @@ namespace GK1
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-
             Content.RootDirectory = "Content";
         }
 
@@ -47,6 +47,10 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
+            //water = new Water(Content, GraphicsDevice,new Vector3(0, 0, 0));
+            //foreach (var loadedModel in loadedModels)
+            //    water.Objects.Add(loadedModel);
+
             //graphics.PreferredBackBufferWidth = GraphicsDevice.DisplayMode.Width;
             //graphics.PreferredBackBufferHeight = GraphicsDevice.DisplayMode.Height;
             //graphics.IsFullScreen = true;
@@ -120,6 +124,15 @@ namespace GK1
             man.SetModelEffect(effect, true);
             man.Material = mat;
             loadedModels.Add(man);
+            var userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, 0, 40f), Matrix.Identity, Matrix.CreateScale(40f), floorVerts, metroTexture);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
+            userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f), Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
+                                                    Matrix.CreateScale(0.2f), platformVertex, null);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
         }
 
         private void LoadVertices()
@@ -228,10 +241,12 @@ namespace GK1
 
         protected override void Draw(GameTime gameTime)
         {
+            //water.PreDraw(camera, gameTime);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
-            DrawGround();
-            DrawPlatform();
+            //DrawGround();
+            //DrawPlatform();
+            //water.RenderReflection(camera);
             foreach (var cModel in loadedModels)
             {
                 cModel.Material = mat;
@@ -241,66 +256,6 @@ namespace GK1
             base.Draw(gameTime);
         }
 
-        private void DrawGround()
-        {
-            var worldMatrix = Matrix.CreateScale(40f) * Matrix.CreateTranslation(new Vector3(0, 0, 40f)) * camera.WorldMatrix;
-            SetEffectParameters(worldMatrix);
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphics.GraphicsDevice.DrawUserPrimitives(
-                    PrimitiveType.TriangleList,
-                    floorVerts,
-                    0,
-                    floorVerts.Length / 3);
-            }
-        }
-
-        private void DrawPlatform()
-        {
-            var worldMatrix = Matrix.CreateScale(0.2f)*Matrix.CreateRotationY(MathHelper.ToRadians(90f))*
-                              Matrix.CreateRotationX(MathHelper.ToRadians(90f))*
-                              Matrix.CreateTranslation(new Vector3(0, -37, 15f))*camera.WorldMatrix;
-            SetEffectParameters(worldMatrix);
-
-            foreach (var pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                graphics.GraphicsDevice.DrawUserPrimitives(
-                    PrimitiveType.TriangleList,
-                    platformVertex,
-                    0,
-                    platformVertex.Length / 3);
-            }
-        }
-
-        private void SetEffectParameters(Matrix worldMatrix)
-        {
-            effect.Parameters[nameof(FogEnabled)]?.SetValue(FogEnabled);
-            effect.Parameters[nameof(FogStart)]?.SetValue(FogStart);
-            effect.Parameters[nameof(FogEnd)]?.SetValue(FogEnd);
-            effect.Parameters[nameof(FogIntensity)]?.SetValue(FogIntensity);
-
-            effect.Parameters["LightDirection"]?.SetValue(mat.LightDirection);
-            effect.Parameters["LightPosition"]?.SetValue(mat.LightPosition);
-
-            effect.Parameters["LightColor"]?.SetValue(mat.LightColor);
-
-            effect.Parameters["SpecularColor"]?.SetValue(mat.SpecularColor);
-
-            effect.Parameters["LightAttenuation"]?.SetValue(
-                mat.LightAttenuation);
-
-            effect.Parameters["LightFalloff"]?.SetValue(mat.LightFalloff);
-            effect.Parameters["LightTypes"]?.SetValue(mat.LightTypes.Select(x => (float) x).ToArray());
-
-            effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
-            effect.Parameters["BasicTexture"].SetValue(metroTexture);
-            effect.Parameters["View"].SetValue(camera.ViewMatrix);
-            effect.Parameters["TextureEnabled"].SetValue(true);
-            effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
-            effect.Parameters["World"].SetValue(worldMatrix);
-        }
     }
 }
 

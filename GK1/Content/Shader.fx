@@ -36,6 +36,9 @@ float3 FogColor = float3(0.5, 0.5, 0.5);
 float FogIntensity = 0.3f;
 bool FogEnabled;
 
+float4 ClipPlane;
+bool ClipPlaneEnabled = false;
+
 struct VertexShaderInput
 {
 	float4 Position : SV_POSITION;
@@ -132,6 +135,8 @@ float4 CalculateLights(VertexShaderOutput input)
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
+	//if (ClipPlaneEnabled)
+	//	clip(dot(float4(input.WorldPosition, 1), ClipPlane));
 	return CalculateLights(input);
 }
 

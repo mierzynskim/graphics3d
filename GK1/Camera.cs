@@ -1,16 +1,54 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
 
 namespace GK1
 {
-    public class Camera
+
+    public abstract class CameraAbstract
+    {
+        public virtual Matrix ViewMatrix { get; protected set; }
+        public virtual Matrix ProjectionMatrix { get; protected set; }
+        public virtual Matrix WorldMatrix { get; protected set; }
+        protected GraphicsDevice GraphicsDevice { get; set; }
+        public CameraAbstract(GraphicsDevice graphicsDevice)
+        {
+            this.GraphicsDevice = graphicsDevice;
+            
+        }
+
+        public virtual void Update()
+        {
+        }
+    }
+
+    public class TargetCamera : CameraAbstract
+    {
+        public Vector3 Position { get; set; }
+        public Vector3 Target { get; set; }
+        public TargetCamera(Vector3 position, Vector3 target, GraphicsDevice graphicsDevice) : base(graphicsDevice)
+        {
+            Position = position;
+            Target = target;
+            GeneratePerspectiveProjectionMatrix(MathHelper.PiOver4);
+        }
+
+        private void GeneratePerspectiveProjectionMatrix(float fieldOfView)
+        {
+            var pp = GraphicsDevice.PresentationParameters;
+            float aspectRatio = (float)pp.BackBufferWidth / pp.BackBufferHeight;
+            this.ProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), aspectRatio, 0.1f, 1000000.0f);
+        }
+        public override void Update()
+        {
+            var forward = Target - Position;
+            var side = Vector3.Cross(forward, Vector3.Up);
+            var up = Vector3.Cross(forward, side);
+            this.ViewMatrix = Matrix.CreateLookAt(Position, Target, up);
+        }
+    }
+    public class Camera : CameraAbstract
     {
         private readonly GraphicsDevice graphicsDevice;
         private float angleZ;
@@ -20,8 +58,9 @@ namespace GK1
 
         public Vector3 Up { get; private set; }
         public Vector3 Right { get; private set; }
+        public Vector3 Target { get; private set; }
 
-        public Matrix ViewMatrix
+        public override Matrix ViewMatrix
         {
             get
             {
@@ -35,13 +74,14 @@ namespace GK1
                 var viewMatrix = Matrix.CreateLookAt(Position, lookAtVector, upVector);
                 Up = viewMatrix.Up;
                 Right = viewMatrix.Left;
+                Target = viewMatrix.Forward;
                 return viewMatrix;
             }
         }
 
-        public Matrix WorldMatrix => Matrix.Identity;
+        public override Matrix WorldMatrix => Matrix.Identity;
 
-        public Matrix ProjectionMatrix
+        public override Matrix ProjectionMatrix
         {
             get
             {
@@ -56,7 +96,7 @@ namespace GK1
             }
         }
 
-        public Camera(GraphicsDevice graphicsDevice)
+        public Camera(GraphicsDevice graphicsDevice) : base(graphicsDevice)
         {
             this.graphicsDevice = graphicsDevice;
             Mouse.SetPosition(graphicsDevice.Viewport.Width / 2, graphicsDevice.Viewport.Height / 2);

@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace GK1
 {
-    public abstract class CModel
+    public abstract class CModel : IRenderable
     {
         public Vector3 Position { get; set; }
         public Matrix Rotation { get; set; }
@@ -11,7 +11,10 @@ namespace GK1
 
         public Model Model { get; protected set; }
         public Material Material { get; set; }
-        public abstract void Draw(Camera camera);
+        public abstract void Draw(CameraAbstract camera);
+
+        public abstract void SetClipPlane(Vector4? plane);
+
         public abstract void SetModelEffect(Effect effect, bool copyEffect);
 
         protected void SetEffectParameter(Effect effect, string paramName, object val)
