@@ -26,10 +26,15 @@ namespace GK1
         private readonly Platform platform = new Platform();
         private Water water;
 
+        private Vector4 clipPlane = new Vector4(0, 10, 0, 0);
+        private bool clipEnabled;
+
         public bool FogEnabled { get; set; }
         public float FogStart { get; set; } = 2;
         public float FogEnd { get; set; } = 10;
         public float FogIntensity { get; set; } = 0.3f;
+
+
 
         public Game1()
         {
@@ -47,7 +52,7 @@ namespace GK1
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
-            water = new Water(Content, GraphicsDevice,new Vector3(0, 0, 0), Vector2.Zero);
+            water = new Water(Content, GraphicsDevice, new Vector3(0, 0, 0), Vector2.Zero);
             foreach (var loadedModel in loadedModels)
                 water.Objects.Add(loadedModel);
 
@@ -55,9 +60,6 @@ namespace GK1
             //graphics.PreferredBackBufferHeight = GraphicsDevice.DisplayMode.Height;
             //graphics.IsFullScreen = true;
             //graphics.ApplyChanges();
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.FillMode = FillMode.WireFrame;
-            GraphicsDevice.RasterizerState = rasterizerState;
             base.Initialize();
         }
 
@@ -155,6 +157,7 @@ namespace GK1
             camera.Update(gameTime);
             UpdateParticle();
             UpdateFogParameters(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
+            UpdateClip(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             UpdateLightsColor(gameTime);
             prevKeyboardState = currentKeyboardState;
             base.Update(gameTime);
@@ -194,25 +197,25 @@ namespace GK1
             if (pressedKeys.Contains(Keys.B) && !prevPressedKeys.Contains(Keys.B))
             {
                 FogStart += 5f;
-                    loadedModels.First().Material.FogStart += 5f;
+                loadedModels.First().Material.FogStart += 5f;
             }
 
             if (pressedKeys.Contains(Keys.V) && !prevPressedKeys.Contains(Keys.V))
             {
                 FogStart -= 5f;
-                    loadedModels.First().Material.FogStart -= 5f;
+                loadedModels.First().Material.FogStart -= 5f;
             }
 
             if (pressedKeys.Contains(Keys.X) && !prevPressedKeys.Contains(Keys.X))
             {
                 FogEnd += 5f;
-                    loadedModels.First().Material.FogEnd += 5f;
+                loadedModels.First().Material.FogEnd += 5f;
             }
 
             if (pressedKeys.Contains(Keys.Z) && !prevPressedKeys.Contains(Keys.Z))
             {
                 FogEnd -= 5f;
-                    loadedModels.First().Material.FogEnd -= 5f;
+                loadedModels.First().Material.FogEnd -= 5f;
             }
 
             if (pressedKeys.Contains(Keys.N) && !prevPressedKeys.Contains(Keys.N))
@@ -226,6 +229,39 @@ namespace GK1
                 FogIntensity -= 0.1f;
                 loadedModels.First().Material.FogIntensity -= 0.1f;
             }
+        }
+
+        private void UpdateClip(Keys[] pressedKeys, Keys[] prevPressedKeys)
+        {
+            if (pressedKeys.Contains(Keys.C) && !prevPressedKeys.Contains(Keys.C))
+            {
+                clipEnabled = !clipEnabled;
+                if (clipEnabled)
+                {
+                    foreach (var loadedModel in loadedModels)
+                        loadedModel.SetClipPlane(clipPlane);
+                }
+                else
+                {
+                    foreach (var loadedModel in loadedModels)
+                        loadedModel.SetClipPlane(null);
+                }
+            }
+
+            if (pressedKeys.Contains(Keys.Left) && !prevPressedKeys.Contains(Keys.Left))
+            {
+                clipPlane.W -= 10;
+                foreach (var loadedModel in loadedModels)
+                    loadedModel.SetClipPlane(clipPlane);
+            }
+
+            if (pressedKeys.Contains(Keys.Right) && !prevPressedKeys.Contains(Keys.Right))
+            {
+                clipPlane.W += 10;
+                foreach (var loadedModel in loadedModels)
+                    loadedModel.SetClipPlane(clipPlane);
+            }
+
         }
 
         private void UpdateLightsColor(GameTime gameTime)
@@ -248,17 +284,44 @@ namespace GK1
             //water.PreDraw(camera, gameTime);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
+            if (clipEnabled)
+                DrawWithClipPlane();
+            else
+            {
+                foreach (var cModel in loadedModels)
+                {
+                    cModel.Material = mat;
+                    cModel.Draw(camera);
+                }
+            }
+            //water.RenderReflection(camera);
+            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+            base.Draw(gameTime);
+        }
+
+        private void DrawWithClipPlane()
+        {
+            var previousRasterizerState = GraphicsDevice.RasterizerState;
+            var rasterizerState = new RasterizerState { FillMode = FillMode.WireFrame };
+            GraphicsDevice.RasterizerState = rasterizerState;
+
             foreach (var cModel in loadedModels)
             {
                 cModel.Material = mat;
                 cModel.Draw(camera);
             }
-            //water.RenderReflection(camera);
-            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-            
-            base.Draw(gameTime);
-        }
+            GraphicsDevice.RasterizerState = previousRasterizerState;
 
+            foreach (var cModel in loadedModels)
+            {
+                cModel.SetClipPlane(-clipPlane);
+                cModel.Material = mat;
+                cModel.Draw(camera);
+            }
+
+            foreach (var cModel in loadedModels)
+                cModel.SetClipPlane(clipPlane);
+        }
     }
 }
 
