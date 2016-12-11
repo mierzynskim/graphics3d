@@ -60,8 +60,8 @@ namespace GK1
             LoadVertices();
             effect = Content.Load<Effect>("Shader");
             smoke = new ParticleSystem(GraphicsDevice, Content,
-                    Content.Load<Texture2D>("smoke"), 400, new Vector2(10), 6,
-                    new Vector3(2, 0, 10), 10f);
+                    Content.Load<Texture2D>("smoke"), 400, new Vector2(30), 6,
+                    new Vector3(0, 0, 15), 10f);
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
@@ -180,14 +180,14 @@ namespace GK1
         private void UpdateParticle()
         {
             // Generate a direction within 15 degrees of (0, 1, 0)
-            var offset = new Vector3(MathHelper.ToRadians(10.0f));
+            var offset = new Vector3(MathHelper.ToRadians(15.0f));
             var randAngle = Vector3.Up + RandVec3(-offset, offset);
             // Generate a position between (-400, 0, -400) and (400, 0, 400)
-            var randPosition = RandVec3(new Vector3(-5), new Vector3(5));
+            var randPosition = RandVec3(new Vector3(-1), new Vector3(1));
             // Generate a speed between 600 and 900
             var randSpeed = (float)random.NextDouble() * 3 + 6;
             //ps.AddParticle(randPosition, randAngle, randSpeed);
-            smoke.AddParticle(randPosition + new Vector3(0, 10, 0), randAngle, randSpeed);
+            smoke.AddParticle(randPosition + new Vector3(0, 5, 0), randAngle, randSpeed);
             smoke.Update();
         }
 

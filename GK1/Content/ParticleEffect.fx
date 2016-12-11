@@ -31,7 +31,7 @@ struct VertexShaderOutput
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
-	float3 position = input.Position;
+	float3 position = float3((input.Position.x / 3) * (input.Position.x / 3), (input.Position.y / 3) *(input.Position.y / 3), (input.Position.x / 3) * (input.Position.x / 3) + (input.Position.y / 3) *(input.Position.y / 3));
 	// Move to billboard corner
 	float2 offset = Size * float2((input.UV.x - 0.5f) * 2.0f, -(input.UV.y - 0.5f) * 2.0f);
 	position += offset.x * Side + offset.y * Up;

@@ -72,8 +72,8 @@ namespace GK1
                 var upVector = Vector3.UnitZ;
 
                 var viewMatrix = Matrix.CreateLookAt(Position, lookAtVector, upVector);
-                Up = viewMatrix.Up;
-                Right = viewMatrix.Left;
+                Up = Vector3.Transform(Vector3.Up, rotationMatrix);
+                Right = Vector3.Cross(Vector3.Transform(Vector3.Forward, rotationMatrix), Up); ;
                 Target = viewMatrix.Forward;
                 return viewMatrix;
             }

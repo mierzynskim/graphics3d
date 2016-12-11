@@ -174,6 +174,7 @@ namespace GK1
             // Determine the start time
             float startTime = (float) (DateTime.Now - start).TotalSeconds;
             // Set the particle settings to each of the particle's vertices
+            //position = new Vector3((float)Math.Pow(position.X / 0.9, 2), (float)Math.Pow(position.Y / 0.9, 2), position.Z);
             for (int i = 0; i < 4; i++)
             {
                 particles[index + i].StartPosition = position;
