@@ -15,15 +15,14 @@ namespace GK1
     {
         private readonly CModel mirrorMesh;
         private readonly Effect mirrorEffect;
-        private GraphicsDevice graphics;
         private readonly Vector3 position;
-
-        private RenderTarget2D reflectionTarg;
-        public List<IRenderable> Objects = new List<IRenderable>();
-        private Matrix scale;
-        private Matrix rotation;
-        private Model mirrorModel;
-        private Matrix[] modelTransforms;
+        private readonly GraphicsDevice graphics;
+        private readonly RenderTarget2D reflectionTarg;
+        public readonly List<IRenderable> Objects = new List<IRenderable>();
+        private readonly Matrix scale;
+        private readonly Matrix rotation;
+        private readonly Model mirrorModel;
+        private readonly Matrix[] modelTransforms;
 
         public Mirror(ContentManager content, GraphicsDevice graphics, Vector3 position, Vector2 size)
         {
@@ -47,28 +46,20 @@ namespace GK1
 
         public void RenderReflection(Camera.Camera camera,GameTime gameTime)
         {
-            // Reflect the camera's properties across the mirror plane
             var reflectedCameraPosition = camera.Position;
-            //reflectedCameraPosition.Y = -reflectedCameraPosition.Y + mirrorMesh.Position.Y * 2;
             reflectedCameraPosition.X = -reflectedCameraPosition.X + mirrorMesh.Position.X * 2;
             var reflectedCameraTarget = camera.Target;
-            //reflectedCameraTarget.Y = -reflectedCameraTarget.Y + mirrorMesh.Position.Y * 2;
             reflectedCameraTarget.X = -reflectedCameraTarget.X + mirrorMesh.Position.X * 2;
-            // Create a temporary camera to render the reflected scene
             var reflectionCamera = new TargetCamera(graphics)
             {
                 Position = reflectedCameraPosition,
                 Target = reflectedCameraTarget
             };
             reflectionCamera.Update(gameTime);
-            // Set the reflection camera's view matrix to the mirror effect
             mirrorEffect.Parameters["ReflectedView"].SetValue(reflectionCamera.ViewMatrix);
-            // Create the clip plane
-            Vector4 clipPlane = new Vector4(1, 0, 0, -mirrorMesh.Position.X);
-            // Set the render target
+            var clipPlane = new Vector4(1, 0, 0, -mirrorMesh.Position.X);
             graphics.SetRenderTarget(reflectionTarg);
             graphics.Clear(Color.Black);
-            // Draw all objects with clip plane
             foreach (var renderable in Objects)
             {
                 renderable.SetClipPlane(clipPlane);
@@ -76,8 +67,6 @@ namespace GK1
                 renderable.SetClipPlane(null);
             }
             graphics.SetRenderTarget(null);
-            // Set the reflected scene to its effect parameter in
-            // the mirror effect
             mirrorEffect.Parameters["ReflectionMap"].SetValue(reflectionTarg);
         }
 

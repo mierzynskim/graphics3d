@@ -16,36 +16,30 @@ namespace GK1
         Vector3 direction;
         float speed;
         float startTime;
-        // Starting position of that particle (t = 0)
         public Vector3 StartPosition
         {
             get { return startPosition; }
             set { startPosition = value; }
         }
 
-        // UV coordinate, used for texturing and to offset vertex in shader
         public Vector2 UV
         {
             get { return uv; }
             set { uv = value; }
         }
 
-        // Movement direction of the particle
         public Vector3 Direction
         {
             get { return direction; }
             set { direction = value; }
         }
 
-        // Speed of the particle in units/second
         public float Speed
         {
             get { return speed; }
             set { speed = value; }
         }
 
-        // The time since the particle system was created that this
-        // particle came into use
         public float StartTime
         {
             get { return startTime; }
@@ -62,7 +56,6 @@ namespace GK1
             this.startTime = StartTime;
         }
 
-        // Vertex declaration
         public readonly static VertexDeclaration VertexDeclaration =
             new VertexDeclaration(
                 new VertexElement(0, VertexElementFormat.Vector3,
@@ -106,9 +99,7 @@ namespace GK1
         private ParticleVertex[] particles;
         private int[] indices;
 
-        // Queue variables
         int activeStart = 0, nActive = 0;
-        // Time particle system was created
         readonly DateTime start;
 
         public ParticleSystem(GraphicsDevice graphicsDevice,
@@ -123,7 +114,6 @@ namespace GK1
             this.wind = wind;
             this.texture = tex;
             this.fadeInTime = FadeInTime;
-            // Create vertex and index buffers to accomodate all particles
             verts = new VertexBuffer(graphicsDevice, typeof(ParticleVertex),
                 nParticles*4, BufferUsage.WriteOnly);
             ints = new IndexBuffer(graphicsDevice,
@@ -136,13 +126,11 @@ namespace GK1
 
         private void GenerateParticles()
         {
-            // Create particle and index arrays
             particles = new ParticleVertex[nParticles*4];
             indices = new int[nParticles*6];
             Vector3 z = Vector3.Zero;
 
             int x = 0;
-            // Initialize particle settings and fill index and vertex arrays
             for (int i = 0; i < nParticles*4; i += 4)
             {
                 particles[i + 0] = new ParticleVertex(z, new Vector2(0, 0),
@@ -165,16 +153,11 @@ namespace GK1
 
         public void AddParticle(Vector3 position, Vector3 direction, float speed)
         {
-            // If there are no available particles, give up
             if (nActive + 4 == nParticles*4)
                 return;
-            // Determine the index at which this particle should be created
             int index = OffsetIndex(activeStart, nActive);
             nActive += 4;
-            // Determine the start time
             float startTime = (float) (DateTime.Now - start).TotalSeconds;
-            // Set the particle settings to each of the particle's vertices
-            //position = new Vector3((float)Math.Pow(position.X / 0.9, 2), (float)Math.Pow(position.Y / 0.9, 2), position.Z);
             for (int i = 0; i < 4; i++)
             {
                 particles[index + i].StartPosition = position;
@@ -184,8 +167,6 @@ namespace GK1
             }
         }
 
-        // Increases the 'start' parameter by 'count' positions, wrapping
-        // around the particle array if necessary
         private int OffsetIndex(int start, int count)
         {
             for (int i = 0; i < count; i++)
@@ -202,32 +183,24 @@ namespace GK1
             float now = (float) (DateTime.Now - start).TotalSeconds;
             int startIndex = activeStart;
             int end = nActive;
-            // For each particle marked as active...
             for (int i = 0; i < end; i++)
             {
-                // If this particle has gotten older than 'lifespan'...
                 if (particles[activeStart].StartTime < now - lifespan)
                 {
-                    // Advance the active particle start position past
-                    // the particle's index and reduce the number of
-                    // active particles by 1
                     activeStart++;
                     nActive--;
                     if (activeStart == particles.Length)
                         activeStart = 0;
                 }
             }
-            // Update the vertex and index buffers
             verts.SetData(particles);
             ints.SetData(indices);
         }
 
         public void Draw(Matrix view, Matrix projection, Vector3 up, Vector3 right)
         {
-            // Set the vertex and index buffer to the graphics card
             graphicsDevice.SetVertexBuffer(verts);
             graphicsDevice.Indices = ints;
-            // Set the effect parameters
             effect.Parameters["ParticleTexture"].SetValue(texture);
             effect.Parameters["View"].SetValue(view);
             effect.Parameters["Projection"].SetValue(projection);
@@ -239,18 +212,13 @@ namespace GK1
             effect.Parameters["Up"].SetValue(up);
             effect.Parameters["Side"].SetValue(right);
             effect.Parameters["FadeInTime"].SetValue(fadeInTime);
-            // Enable blending render states
             graphicsDevice.BlendState = BlendState.AlphaBlend;
             graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
-            // Apply the effect
             effect.CurrentTechnique.Passes[0].Apply();
-            // Draw the billboards
             graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList,
             0, 0, nParticles * 4, 0, nParticles * 2);
-            // Un-set the buffers
             graphicsDevice.SetVertexBuffer(null);
             graphicsDevice.Indices = null;
-            // Reset render states
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
         }
