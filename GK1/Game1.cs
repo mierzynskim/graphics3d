@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GK1.Bloom;
 using GK1.Models;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -39,6 +40,8 @@ namespace GK1
         private FilterLevel mipFilter = FilterLevel.Anisotropic;
         private bool multisampling;
 
+        private BloomComponent bloom;
+        private SpriteBatch spriteBatch;
 
         private enum FilterLevel
         {
@@ -51,6 +54,8 @@ namespace GK1
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            //bloom = new BloomComponent(this);
+            //Components.Add(bloom);
         }
 
         protected override void Initialize()
@@ -62,6 +67,7 @@ namespace GK1
             camera = new Camera.Camera(graphics.GraphicsDevice);
             CreateModels();
             CreateMirror();
+            spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
             base.Initialize();
         }
 
@@ -333,22 +339,11 @@ namespace GK1
         {
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
             mirror.PreDraw(camera, gameTime);
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-            
-            
+            SetRasterizerParameters();
+            bloom?.BeginDraw();
+            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            var ss = new SamplerState
-            {
-                Filter = TextureFilterFromMinMagMip(minFilter, magFilter, mipFilter),
-                MaxAnisotropy = 16,
-                MipMapLevelOfDetailBias = mipMapLevelOfDetailBias,
-                AddressU = TextureAddressMode.Mirror,
-                AddressW = TextureAddressMode.Mirror,
-                AddressV = TextureAddressMode.Mirror,
-                BorderColor = Color.Black
-            };
-
-            SetRasterizerParameters(ss);
             mirror.Draw(camera);
             if (clipEnabled)
                 DrawWithClipPlane();
@@ -360,15 +355,27 @@ namespace GK1
                     cModel.Draw(camera);
                 }
                 smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-                manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+                manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Right);
             }
-            
+            bloom?.Draw(gameTime);
+
+
 
             base.Draw(gameTime);
         }
 
-        private void SetRasterizerParameters(SamplerState ss)
+        private void SetRasterizerParameters()
         {
+            var ss = new SamplerState
+            {
+                Filter = TextureFilterFromMinMagMip(minFilter, magFilter, mipFilter),
+                MaxAnisotropy = 16,
+                MipMapLevelOfDetailBias = mipMapLevelOfDetailBias,
+                AddressU = TextureAddressMode.Mirror,
+                AddressW = TextureAddressMode.Mirror,
+                AddressV = TextureAddressMode.Mirror,
+                BorderColor = Color.Black
+            };
             var originalRasterizerState = graphics.GraphicsDevice.RasterizerState;
             var rasterizerState = new RasterizerState { CullMode = CullMode.None };
 
@@ -402,7 +409,7 @@ namespace GK1
                 cModel.Draw(camera);
             }
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Right);
             GraphicsDevice.RasterizerState = previousRasterizerState;
 
             foreach (var cModel in loadedModels)
@@ -414,7 +421,7 @@ namespace GK1
             smoke.SetClipPlane(-clipPlane);
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
             manBillboardSystem.SetClipPlane(-clipPlane);
-            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Right);
 
             foreach (var cModel in loadedModels)
                 cModel.SetClipPlane(clipPlane);

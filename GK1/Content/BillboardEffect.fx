@@ -50,6 +50,7 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 	float4 color = tex2D(texSampler, input.UV);
 	if (AlphaTest)
 		clip((color.a - AlphaTestValue) * (AlphaTestGreater ? 1 : -1));
+
 	return color;
 }
 technique Technique1

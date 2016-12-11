@@ -39,6 +39,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BillboardSystem.cs" />
+    <Compile Include="Bloom\BloomComponent.cs" />
+    <Compile Include="Bloom\BloomSettings.cs" />
     <Compile Include="Camera\Camera.cs" />
     <Compile Include="Camera\CameraAbstract.cs" />
     <Compile Include="Camera\TargetCamera.cs" />
