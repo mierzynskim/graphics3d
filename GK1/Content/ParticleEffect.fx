@@ -39,7 +39,7 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	float3 position = float3((input.Position.x / 3) * (input.Position.x / 3), (input.Position.y / 3) *(input.Position.y / 3), (input.Position.x / 3) * (input.Position.x / 3) + (input.Position.y / 3) *(input.Position.y / 3));
 	// Move to billboard corner
 	float2 offset = Size * float2((input.UV.x - 0.5f) * 2.0f, -(input.UV.y - 0.5f) * 2.0f);
-	position += offset.x * Side + offset.y * Up;
+	position += offset.x * Side + offset.y * Up + float3(0, 10, 0);
 	// Determine how long this particle has been alive
 	float relativeTime = (Time - input.StartTime);
 	output.RelativeTime = relativeTime;

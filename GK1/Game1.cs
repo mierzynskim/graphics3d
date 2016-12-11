@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GK1.Models;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -29,6 +30,8 @@ namespace GK1
 
         private Vector4 clipPlane = new Vector4(0, 10, 0, 0);
         private bool clipEnabled;
+        private Texture benchWoodenTexture;
+        private Dictionary<ModelMesh, Texture> benchModelTexture;
 
         public bool FogEnabled { get; set; }
         public float FogStart { get; set; } = 2;
@@ -70,6 +73,7 @@ namespace GK1
                 positions[i] = new Vector3(r.Next(-40, 40), r.Next(25, 30), 2.5f);
             man = new BillboardSystem(GraphicsDevice, Content, Content.Load<Texture2D>("man2"), new Vector2(5), positions);
             metroTexture = Content.Load<Texture2D>("metro");
+
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
             water = new Water(Content, GraphicsDevice, new Vector3(0, 0, 0), Vector2.Zero);
@@ -122,35 +126,9 @@ namespace GK1
                     [3] = new Vector3(-10, 0, 5)
                 },
             };
-            var userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, 0, 40f), Matrix.Identity, Matrix.CreateScale(40f), floorVerts, metroTexture);
-            userDefinedModel.SetModelEffect(effect, true);
-            userDefinedModel.Material = mat;
-            loadedModels.Add(userDefinedModel);
-            userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f), Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
-                                                    Matrix.CreateScale(0.2f), platformVertex, null);
-            userDefinedModel.SetModelEffect(effect, true);
-            userDefinedModel.Material = mat;
-            loadedModels.Add(userDefinedModel);
-            var benchModel = Content.Load<Model>("Bench");
-            for (var i = 0; i < 2; i++)
-            {
-                var model = new LoadedModel(benchModel, modelsPositions[i],
-                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice);
-                model.SetModelEffect(effect, true);
-                model.Material = mat;
-                loadedModels.Add(model);
-            }
-            var billboard = Content.Load<Model>("billboard_a_2012");
-            for (var i = 2; i < 4; i++)
-            {
-
-                var advertModel = new LoadedModel(billboard, modelsPositions[i],
-                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
-                    Matrix.CreateScale(0.9f), GraphicsDevice);
-                advertModel.SetModelEffect(effect, true);
-                advertModel.Material = mat;
-                loadedModels.Add(advertModel);
-            }
+            AddPlatformAndStationModels();
+            AddBenchModel(modelsPositions);
+            AddBillboardModels(modelsPositions);
 
             var man = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
                     Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
@@ -159,6 +137,58 @@ namespace GK1
             man.Material = mat;
             loadedModels.Add(man);
 
+        }
+
+        private void AddPlatformAndStationModels()
+        {
+            var userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, 0, 40f), Matrix.Identity,
+                Matrix.CreateScale(40f), floorVerts, metroTexture);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
+            userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f),
+                Matrix.CreateRotationY(MathHelper.ToRadians(90f))*Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
+                Matrix.CreateScale(0.2f), platformVertex, null);
+            userDefinedModel.SetModelEffect(effect, true);
+            userDefinedModel.Material = mat;
+            loadedModels.Add(userDefinedModel);
+        }
+
+        private void AddBillboardModels(List<Vector3> modelsPositions)
+        {
+            var billboard = Content.Load<Model>("billboard_a_2012");
+            for (var i = 2; i < 4; i++)
+            {
+                var advertModel = new LoadedModel(billboard, modelsPositions[i],
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                    Matrix.CreateScale(0.9f), GraphicsDevice);
+                advertModel.SetModelEffect(effect, true);
+                advertModel.Material = mat;
+                loadedModels.Add(advertModel);
+            }
+        }
+
+        private void AddBenchModel(List<Vector3> modelsPositions)
+        {
+            var benchModel = Content.Load<Model>("Bench");
+            benchWoodenTexture = Content.Load<Texture>("benchTexture");
+            benchModelTexture = new Dictionary<ModelMesh, Texture>();
+            var j = 0;
+            int[] woodenElementsIndexes = { 0, 1, 2, 19, 20, 21, 22, 23 };
+            foreach (var mesh in benchModel.Meshes)
+            {
+                if (woodenElementsIndexes.Any(e => e == j))
+                    benchModelTexture.Add(mesh, benchWoodenTexture);
+                j++;
+            }
+            for (var i = 0; i < 2; i++)
+            {
+                var model = new CustomTexturedLoadedModel(benchModel, modelsPositions[i],
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)), Matrix.CreateScale(0.009f), GraphicsDevice, benchModelTexture);
+                model.SetModelEffect(effect, true);
+                model.Material = mat;
+                loadedModels.Add(model);
+            }
         }
 
         private void LoadVertices()

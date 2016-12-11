@@ -1,9 +1,8 @@
-using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace GK1
+namespace GK1.Models
 {
     public class UserDefinedModel : CModel
     {

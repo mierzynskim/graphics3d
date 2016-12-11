@@ -40,18 +40,18 @@
   <ItemGroup>
     <Compile Include="BillboardSystem.cs" />
     <Compile Include="Camera.cs" />
-    <Compile Include="CModel.cs" />
+    <Compile Include="Models\CModel.cs" />
     <Compile Include="Direction.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="IRenderable.cs" />
-    <Compile Include="LoadedModel.cs" />
+    <Compile Include="Models\LoadedModel.cs" />
     <Compile Include="Material.cs" />
     <Compile Include="MeshTag.cs" />
     <Compile Include="ParticleSystem.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UserDefinedModel.cs" />
+    <Compile Include="Models\UserDefinedModel.cs" />
     <Compile Include="Water.cs" />
   </ItemGroup>
   <ItemGroup>
