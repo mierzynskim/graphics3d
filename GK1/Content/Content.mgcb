@@ -293,12 +293,6 @@
 /processorParam:TextureFormat=Color
 /build:smoke.bmp
 
-#begin WaterEffect.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/processorParam:DebugMode=Auto
-/build:WaterEffect.fx
-
 #begin BillboardEffect.fx
 /importer:EffectImporter
 /processor:EffectProcessor
@@ -407,4 +401,10 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Rovere Chiaro.jpg
+
+#begin mirrorEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:mirrorEffect.fx
 

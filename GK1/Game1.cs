@@ -26,7 +26,7 @@ namespace GK1
         private KeyboardState prevKeyboardState;
 
         private readonly Platform platform = new Platform();
-        private Water water;
+        private Mirror mirror;
 
         private Vector4 clipPlane = new Vector4(0, 10, 0, 0);
         private bool clipEnabled;
@@ -67,9 +67,9 @@ namespace GK1
 
         private void CreateMirror()
         {
-            water = new Water(Content, GraphicsDevice, new Vector3(-20, 0, 10f), Vector2.Zero);
+            mirror = new Mirror(Content, GraphicsDevice, new Vector3(-20, 0, 10f), Vector2.Zero);
             foreach (var loadedModel in loadedModels)
-                water.Objects.Add(loadedModel);
+                mirror.Objects.Add(loadedModel);
         }
 
         private void CreateBillboardSystems()
@@ -332,7 +332,7 @@ namespace GK1
         protected override void Draw(GameTime gameTime)
         {
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
-            water.PreDraw(camera, gameTime);
+            mirror.PreDraw(camera, gameTime);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             
             
@@ -349,7 +349,7 @@ namespace GK1
             };
 
             SetRasterizerParameters(ss);
-            water.Draw(camera);
+            mirror.Draw(camera);
             if (clipEnabled)
                 DrawWithClipPlane();
             else
