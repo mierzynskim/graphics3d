@@ -1,4 +1,5 @@
 using System.Linq;
+using GK1.Camera;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -30,7 +31,7 @@ namespace GK1.Models
             if (camera is TargetCamera)
                 worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * (camera).WorldMatrix;
             else
-                worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * ((Camera)camera).WorldMatrix;
+                worldMatrix = scale * rotation * Matrix.CreateTranslation(position) * ((Camera.Camera)camera).WorldMatrix;
             SetEffectParameters(camera, worldMatrix);
 
             foreach (var pass in effect.CurrentTechnique.Passes)

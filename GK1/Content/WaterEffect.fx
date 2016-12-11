@@ -46,7 +46,7 @@ float2 halfPixel()
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
-	float2 reflectionUV = postProjToScreen(input.ReflectionPosition) +halfPixel();
+	float2 reflectionUV = postProjToScreen(input.ReflectionPosition) + halfPixel();
 	float3 reflection = tex2D(reflectionSampler, reflectionUV);
 	return float4(reflection, 1);
 }

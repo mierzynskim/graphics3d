@@ -15,7 +15,7 @@ namespace GK1
         private VertexPositionNormalTexture[] platformVertex;
         private VertexPositionNormalTexture[] floorVerts;
         private Effect effect;
-        private Camera camera;
+        private Camera.Camera camera;
         private Texture2D metroTexture;
         private LightingMaterial mat;
         private TimeSpan prevLightUpdateTime;
@@ -59,7 +59,7 @@ namespace GK1
             effect = Content.Load<Effect>("Shader");
             CreateBillboardSystems();
             metroTexture = Content.Load<Texture2D>("metro");
-            camera = new Camera(graphics.GraphicsDevice);
+            camera = new Camera.Camera(graphics.GraphicsDevice);
             CreateModels();
             CreateMirror();
             base.Initialize();
@@ -67,7 +67,7 @@ namespace GK1
 
         private void CreateMirror()
         {
-            water = new Water(Content, GraphicsDevice, new Vector3(0, 0, 0), Vector2.Zero);
+            water = new Water(Content, GraphicsDevice, new Vector3(-20, 0, 10f), Vector2.Zero);
             foreach (var loadedModel in loadedModels)
                 water.Objects.Add(loadedModel);
         }
@@ -133,7 +133,7 @@ namespace GK1
         private void AddManModel(List<Vector3> modelsPositions)
         {
             var manModel = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
-                Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                 Matrix.CreateScale(0.65f), GraphicsDevice);
             manModel.SetModelEffect(effect, true);
             manModel.Material = mat;
@@ -148,7 +148,7 @@ namespace GK1
             userDefinedModel.Material = mat;
             loadedModels.Add(userDefinedModel);
             userDefinedModel = new UserDefinedModel(GraphicsDevice, new Vector3(0, -37, 15f),
-                Matrix.CreateRotationY(MathHelper.ToRadians(90f))*Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
+                Matrix.CreateRotationY(MathHelper.ToRadians(90f)) * Matrix.CreateRotationX(MathHelper.ToRadians(90f)),
                 Matrix.CreateScale(0.2f), platformVertex, null);
             userDefinedModel.SetModelEffect(effect, true);
             userDefinedModel.Material = mat;
@@ -161,7 +161,7 @@ namespace GK1
             for (var i = 2; i < 4; i++)
             {
                 var advertModel = new LoadedModel(billboard, modelsPositions[i],
-                    Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
                     Matrix.CreateScale(0.9f), GraphicsDevice);
                 advertModel.SetModelEffect(effect, true);
                 advertModel.Material = mat;
@@ -306,10 +306,10 @@ namespace GK1
 
 
             if (pressedKeys.Contains(Keys.OemCloseBrackets) && !prevPressedKeys.Contains(Keys.OemCloseBrackets))
-                magFilter = (FilterLevel) (((int) magFilter + 1)%3);
+                magFilter = (FilterLevel)(((int)magFilter + 1) % 3);
 
             if (pressedKeys.Contains(Keys.OemOpenBrackets) && !prevPressedKeys.Contains(Keys.OemOpenBrackets))
-                mipFilter = (FilterLevel) (((int) mipFilter + 1)%3);
+                mipFilter = (FilterLevel)(((int)mipFilter + 1) % 3);
 
         }
 
@@ -331,9 +331,11 @@ namespace GK1
 
         protected override void Draw(GameTime gameTime)
         {
-            //water.PreDraw(camera, gameTime);
-            GraphicsDevice.Clear(Color.CornflowerBlue);
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
+            water.PreDraw(camera, gameTime);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            
+            
 
             var ss = new SamplerState
             {
@@ -346,6 +348,27 @@ namespace GK1
                 BorderColor = Color.Black
             };
 
+            SetRasterizerParameters(ss);
+            water.Draw(camera);
+            if (clipEnabled)
+                DrawWithClipPlane();
+            else
+            {
+                foreach (var cModel in loadedModels)
+                {
+                    cModel.Material = mat;
+                    cModel.Draw(camera);
+                }
+                smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+                manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+            }
+            
+
+            base.Draw(gameTime);
+        }
+
+        private void SetRasterizerParameters(SamplerState ss)
+        {
             var originalRasterizerState = graphics.GraphicsDevice.RasterizerState;
             var rasterizerState = new RasterizerState { CullMode = CullMode.None };
 
@@ -364,24 +387,7 @@ namespace GK1
             };
             for (int i = 0; i < 15; i++)
                 graphics.GraphicsDevice.SamplerStates[i] = ss;
-            
-
             graphics.ApplyChanges();
-            if (clipEnabled)
-                DrawWithClipPlane();
-            else
-            {
-                foreach (var cModel in loadedModels)
-                {
-                    cModel.Material = mat;
-                    cModel.Draw(camera);
-                }
-                smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-                manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
-            }
-            //water.RenderReflection(camera);
-
-            base.Draw(gameTime);
         }
 
         private void DrawWithClipPlane()

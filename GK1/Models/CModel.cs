@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GK1.Camera;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace GK1.Models

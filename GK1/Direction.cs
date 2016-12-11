@@ -5,6 +5,8 @@
         Forward,
         Backwards,
         Left,
-        Right
+        Right,
+        Up,
+        Down
     }
 }
