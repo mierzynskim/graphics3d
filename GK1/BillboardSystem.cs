@@ -22,6 +22,8 @@ namespace GK1
         private readonly GraphicsDevice graphicsDevice;
         private readonly Effect effect;
 
+        private const bool EnsureOcclusion = true;
+
         public BillboardSystem(GraphicsDevice graphicsDevice,
             ContentManager content, Texture2D texture,
             Vector2 billboardSize, Vector3[] particlePositions)
@@ -36,12 +38,12 @@ namespace GK1
 
         private void GenerateParticles(Vector3[] particlePositions)
         {
-            particles = new VertexPositionTexture[nBillboards*4];
-            indices = new int[nBillboards*6];
+            particles = new VertexPositionTexture[nBillboards * 4];
+            indices = new int[nBillboards * 6];
             int x = 0;
-            for (int i = 0; i < nBillboards*4; i += 4)
+            for (int i = 0; i < nBillboards * 4; i += 4)
             {
-                Vector3 pos = particlePositions[i/4];
+                Vector3 pos = particlePositions[i / 4];
                 particles[i + 0] = new VertexPositionTexture(pos,
                     new Vector2(0, 0));
                 particles[i + 1] = new VertexPositionTexture(pos,
@@ -58,28 +60,33 @@ namespace GK1
                 indices[x++] = i + 0;
                 verts = new VertexBuffer(graphicsDevice,
                     typeof(VertexPositionTexture),
-                    nBillboards*4, BufferUsage.WriteOnly);
+                    nBillboards * 4, BufferUsage.WriteOnly);
                 verts.SetData<VertexPositionTexture>(particles);
                 ints = new IndexBuffer(graphicsDevice,
                     IndexElementSize.ThirtyTwoBits,
-                    nBillboards*6, BufferUsage.WriteOnly);
+                    nBillboards * 6, BufferUsage.WriteOnly);
                 ints.SetData<int>(indices);
             }
         }
 
-        public void Draw(Matrix view, Matrix projection, Matrix world, Vector3 up, Vector3 right)
+
+        public void Draw(Matrix view, Matrix projection, Vector3 right)
         {
             graphicsDevice.SetVertexBuffer(verts);
             graphicsDevice.Indices = ints;
-            SetEffectParameters(view, projection, world, up, right);
             graphicsDevice.BlendState = BlendState.AlphaBlend;
-            graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, 4 * nBillboards, 0, nBillboards * 2);
+            SetEffectParameters(view, projection, right);
+
+            DrawOpaquePixels();
+            DrawTransparentPixels();
+
             graphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphicsDevice.SetVertexBuffer(null);
             graphicsDevice.Indices = null;
         }
 
-        private void SetEffectParameters(Matrix view, Matrix projection, Matrix world, Vector3 up, Vector3 right)
+        private void SetEffectParameters(Matrix view, Matrix projection, Vector3 right)
         {
             effect.Parameters["ParticleTexture"].SetValue(texture);
             effect.Parameters["View"].SetValue(view);
@@ -90,6 +97,27 @@ namespace GK1
             effect.Parameters["Side"].SetValue(right);
 
             effect.CurrentTechnique.Passes[0].Apply();
+        }
+
+        private void DrawOpaquePixels()
+        {
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            effect.Parameters["AlphaTest"].SetValue(true);
+            effect.Parameters["AlphaTestGreater"].SetValue(true);
+            DrawBillboards();
+        }
+        private void DrawBillboards()
+        {
+            effect.CurrentTechnique.Passes[0].Apply();
+            graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, 4 * nBillboards, 0, nBillboards * 2);
+        }
+
+        private void DrawTransparentPixels()
+        {
+            graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+            effect.Parameters["AlphaTest"].SetValue(true);
+            effect.Parameters["AlphaTestGreater"].SetValue(false);
+            DrawBillboards();
         }
 
         public void SetClipPlane(Vector4? plane)
