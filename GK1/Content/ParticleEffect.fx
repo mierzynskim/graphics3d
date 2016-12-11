@@ -12,6 +12,9 @@ float3 Up;
 float3 Side;
 float FadeInTime;
 
+float4 ClipPlane;
+bool ClipPlaneEnabled = false;
+
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
@@ -24,6 +27,7 @@ struct VertexShaderInput
 struct VertexShaderOutput
 {
 	float4 Position : POSITION0;
+	float4 Position1 : POSITION1;
 	float2 UV : TEXCOORD0;
 	float2 RelativeTime : TEXCOORD1;
 };
@@ -31,6 +35,7 @@ struct VertexShaderOutput
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
 	VertexShaderOutput output;
+	output.Position1 = input.Position;
 	float3 position = float3((input.Position.x / 3) * (input.Position.x / 3), (input.Position.y / 3) *(input.Position.y / 3), (input.Position.x / 3) * (input.Position.x / 3) + (input.Position.y / 3) *(input.Position.y / 3));
 	// Move to billboard corner
 	float2 offset = Size * float2((input.UV.x - 0.5f) * 2.0f, -(input.UV.y - 0.5f) * 2.0f);
@@ -48,6 +53,8 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 
 float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
+	if (ClipPlaneEnabled)
+		clip(dot(input.Position1, ClipPlane.xyz) + ClipPlane.w);
 	// Ignore particles that aren't active
 	clip(input.RelativeTime);
 	// Sample texture

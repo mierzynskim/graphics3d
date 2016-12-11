@@ -38,6 +38,7 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BillboardSystem.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="CModel.cs" />
     <Compile Include="Direction.cs" />

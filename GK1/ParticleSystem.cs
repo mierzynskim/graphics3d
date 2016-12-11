@@ -254,6 +254,13 @@ namespace GK1
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
         }
+
+        public void SetClipPlane(Vector4? plane)
+        {
+            effect.Parameters["ClipPlaneEnabled"].SetValue(plane.HasValue);
+            if (plane.HasValue)
+                effect.Parameters["ClipPlane"].SetValue(plane.Value);
+        }
     }
 }
 

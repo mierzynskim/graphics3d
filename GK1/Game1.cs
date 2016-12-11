@@ -21,6 +21,7 @@ namespace GK1
 
         private readonly Random random = new Random();
         private ParticleSystem smoke;
+        private BillboardSystem man;
         private KeyboardState prevKeyboardState;
 
         private readonly Platform platform = new Platform();
@@ -62,6 +63,12 @@ namespace GK1
             smoke = new ParticleSystem(GraphicsDevice, Content,
                     Content.Load<Texture2D>("smoke"), 400, new Vector2(30), 6,
                     new Vector3(0, 0, 15), 10f);
+            // Generate random tree positions
+            var r = new Random();
+            var positions = new Vector3[15];
+            for (int i = 0; i < positions.Length; i++)
+                positions[i] = new Vector3(r.Next(-40, 40), r.Next(25, 30), 2.5f);
+            man = new BillboardSystem(GraphicsDevice, Content, Content.Load<Texture2D>("man2"), new Vector2(5), positions);
             metroTexture = Content.Load<Texture2D>("metro");
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
@@ -254,11 +261,15 @@ namespace GK1
                 {
                     foreach (var loadedModel in loadedModels)
                         loadedModel.SetClipPlane(clipPlane);
+                    man.SetClipPlane(clipPlane);
+                    smoke.SetClipPlane(clipPlane);
                 }
                 else
                 {
                     foreach (var loadedModel in loadedModels)
                         loadedModel.SetClipPlane(null);
+                    man.SetClipPlane(null);
+                    smoke.SetClipPlane(null);
                 }
             }
 
@@ -361,9 +372,11 @@ namespace GK1
                     cModel.Material = mat;
                     cModel.Draw(camera);
                 }
+                smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+                man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
             }
             //water.RenderReflection(camera);
-            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+
             base.Draw(gameTime);
         }
 
@@ -378,6 +391,8 @@ namespace GK1
                 cModel.Material = mat;
                 cModel.Draw(camera);
             }
+            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+            man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
             GraphicsDevice.RasterizerState = previousRasterizerState;
 
             foreach (var cModel in loadedModels)
@@ -386,9 +401,15 @@ namespace GK1
                 cModel.Material = mat;
                 cModel.Draw(camera);
             }
+            smoke.SetClipPlane(-clipPlane);
+            smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
+            man.SetClipPlane(-clipPlane);
+            man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
 
             foreach (var cModel in loadedModels)
                 cModel.SetClipPlane(clipPlane);
+            man.SetClipPlane(clipPlane);
+            smoke.SetClipPlane(clipPlane);
         }
 
         private TextureFilter TextureFilterFromMinMagMip(FilterLevel minFilter, FilterLevel magFilter, FilterLevel mipFilter)
