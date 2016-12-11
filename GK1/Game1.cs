@@ -22,7 +22,7 @@ namespace GK1
 
         private readonly Random random = new Random();
         private ParticleSystem smoke;
-        private BillboardSystem man;
+        private BillboardSystem manBillboardSystem;
         private KeyboardState prevKeyboardState;
 
         private readonly Platform platform = new Platform();
@@ -33,16 +33,12 @@ namespace GK1
         private Texture benchWoodenTexture;
         private Dictionary<ModelMesh, Texture> benchModelTexture;
 
-        public bool FogEnabled { get; set; }
-        public float FogStart { get; set; } = 2;
-        public float FogEnd { get; set; } = 10;
-        public float FogIntensity { get; set; } = 0.3f;
+        private float mipMapLevelOfDetailBias;
+        private FilterLevel minFilter = FilterLevel.Anisotropic;
+        private FilterLevel magFilter = FilterLevel.Anisotropic;
+        private FilterLevel mipFilter = FilterLevel.Anisotropic;
+        private bool multisampling;
 
-        public float MipMapLevelOfDetailBias { get; set; }
-
-        private FilterLevel MinFilter { get; set; } = FilterLevel.Anisotropic;
-        private FilterLevel MagFilter { get; set; } = FilterLevel.Anisotropic;
-        private FilterLevel MipFilter { get; set; } = FilterLevel.Anisotropic;
 
         private enum FilterLevel
         {
@@ -50,8 +46,6 @@ namespace GK1
             Linear = 1,
             Anisotropic = 2
         }
-
-
 
         public Game1()
         {
@@ -63,28 +57,32 @@ namespace GK1
         {
             LoadVertices();
             effect = Content.Load<Effect>("Shader");
-            smoke = new ParticleSystem(GraphicsDevice, Content,
-                    Content.Load<Texture2D>("smoke"), 400, new Vector2(30), 6,
-                    new Vector3(0, 0, 15), 10f);
-            // Generate random tree positions
-            var r = new Random();
-            var positions = new Vector3[15];
-            for (int i = 0; i < positions.Length; i++)
-                positions[i] = new Vector3(r.Next(-40, 40), r.Next(25, 30), 2.5f);
-            man = new BillboardSystem(GraphicsDevice, Content, Content.Load<Texture2D>("man2"), new Vector2(5), positions);
+            CreateBillboardSystems();
             metroTexture = Content.Load<Texture2D>("metro");
-
             camera = new Camera(graphics.GraphicsDevice);
             CreateModels();
+            CreateMirror();
+            base.Initialize();
+        }
+
+        private void CreateMirror()
+        {
             water = new Water(Content, GraphicsDevice, new Vector3(0, 0, 0), Vector2.Zero);
             foreach (var loadedModel in loadedModels)
                 water.Objects.Add(loadedModel);
+        }
 
-            //graphics.PreferredBackBufferWidth = GraphicsDevice.DisplayMode.Width;
-            //graphics.PreferredBackBufferHeight = GraphicsDevice.DisplayMode.Height;
-            //graphics.IsFullScreen = true;
-            //graphics.ApplyChanges();
-            base.Initialize();
+        private void CreateBillboardSystems()
+        {
+            smoke = new ParticleSystem(GraphicsDevice, Content,
+                Content.Load<Texture2D>("smoke"), 400, new Vector2(30), 6,
+                new Vector3(0, 0, 15), 10f);
+            var r = new Random();
+            var positions = new Vector3[15];
+            for (var i = 0; i < positions.Length; i++)
+                positions[i] = new Vector3(r.Next(-40, 40), r.Next(25, 30), 2.5f);
+            manBillboardSystem = new BillboardSystem(GraphicsDevice, Content, Content.Load<Texture2D>("man2"), new Vector2(5),
+                positions);
         }
 
         private void CreateModels()
@@ -129,14 +127,17 @@ namespace GK1
             AddPlatformAndStationModels();
             AddBenchModel(modelsPositions);
             AddBillboardModels(modelsPositions);
+            AddManModel(modelsPositions);
+        }
 
-            var man = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
-                    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
-                    Matrix.CreateScale(0.65f), GraphicsDevice);
-            man.SetModelEffect(effect, true);
-            man.Material = mat;
-            loadedModels.Add(man);
-
+        private void AddManModel(List<Vector3> modelsPositions)
+        {
+            var manModel = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
+                Matrix.CreateRotationX(MathHelper.ToRadians(90f))*Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+                Matrix.CreateScale(0.65f), GraphicsDevice);
+            manModel.SetModelEffect(effect, true);
+            manModel.Material = mat;
+            loadedModels.Add(manModel);
         }
 
         private void AddPlatformAndStationModels()
@@ -216,19 +217,14 @@ namespace GK1
 
         private void UpdateParticle()
         {
-            // Generate a direction within 15 degrees of (0, 1, 0)
             var offset = new Vector3(MathHelper.ToRadians(15.0f));
             var randAngle = Vector3.Up + RandVec3(-offset, offset);
-            // Generate a position between (-400, 0, -400) and (400, 0, 400)
             var randPosition = RandVec3(new Vector3(-1), new Vector3(1));
-            // Generate a speed between 600 and 900
             var randSpeed = (float)random.NextDouble() * 3 + 6;
-            //ps.AddParticle(randPosition, randAngle, randSpeed);
             smoke.AddParticle(randPosition + new Vector3(0, 5, 0), randAngle, randSpeed);
             smoke.Update();
         }
 
-        // Returns a random Vector3 between min and max
         private Vector3 RandVec3(Vector3 min, Vector3 max)
         {
             return new Vector3(
@@ -240,46 +236,25 @@ namespace GK1
         private void UpdateFogParameters(Keys[] pressedKeys, Keys[] prevPressedKeys)
         {
             if (pressedKeys.Contains(Keys.F) && !prevPressedKeys.Contains(Keys.F))
-            {
-                FogEnabled = !FogEnabled;
                 loadedModels.First().Material.FogEnabled = !loadedModels.First().Material.FogEnabled;
-            }
 
             if (pressedKeys.Contains(Keys.B) && !prevPressedKeys.Contains(Keys.B))
-            {
-                FogStart += 5f;
                 loadedModels.First().Material.FogStart += 5f;
-            }
 
             if (pressedKeys.Contains(Keys.V) && !prevPressedKeys.Contains(Keys.V))
-            {
-                FogStart -= 5f;
                 loadedModels.First().Material.FogStart -= 5f;
-            }
 
             if (pressedKeys.Contains(Keys.X) && !prevPressedKeys.Contains(Keys.X))
-            {
-                FogEnd += 5f;
                 loadedModels.First().Material.FogEnd += 5f;
-            }
 
             if (pressedKeys.Contains(Keys.Z) && !prevPressedKeys.Contains(Keys.Z))
-            {
-                FogEnd -= 5f;
                 loadedModels.First().Material.FogEnd -= 5f;
-            }
 
             if (pressedKeys.Contains(Keys.N) && !prevPressedKeys.Contains(Keys.N))
-            {
-                FogIntensity += 0.1f;
                 loadedModels.First().Material.FogIntensity += 0.1f;
-            }
 
             if (pressedKeys.Contains(Keys.M) && !prevPressedKeys.Contains(Keys.M))
-            {
-                FogIntensity -= 0.1f;
                 loadedModels.First().Material.FogIntensity -= 0.1f;
-            }
         }
 
         private void UpdateClip(Keys[] pressedKeys, Keys[] prevPressedKeys)
@@ -291,14 +266,14 @@ namespace GK1
                 {
                     foreach (var loadedModel in loadedModels)
                         loadedModel.SetClipPlane(clipPlane);
-                    man.SetClipPlane(clipPlane);
+                    manBillboardSystem.SetClipPlane(clipPlane);
                     smoke.SetClipPlane(clipPlane);
                 }
                 else
                 {
                     foreach (var loadedModel in loadedModels)
                         loadedModel.SetClipPlane(null);
-                    man.SetClipPlane(null);
+                    manBillboardSystem.SetClipPlane(null);
                     smoke.SetClipPlane(null);
                 }
             }
@@ -322,23 +297,22 @@ namespace GK1
         private void UpdateTexturesParameters(Keys[] pressedKeys, Keys[] prevPressedKeys)
         {
             if (pressedKeys.Contains(Keys.P) && !prevPressedKeys.Contains(Keys.P))
-                Multisampling = !Multisampling;
+                multisampling = !multisampling;
             if (pressedKeys.Contains(Keys.OemMinus))
-                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias - 0.1f;
+                mipMapLevelOfDetailBias = mipMapLevelOfDetailBias - 0.1f;
 
             if (pressedKeys.Contains(Keys.OemPlus))
-                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias + 0.1f;
+                mipMapLevelOfDetailBias = mipMapLevelOfDetailBias + 0.1f;
 
 
             if (pressedKeys.Contains(Keys.OemCloseBrackets) && !prevPressedKeys.Contains(Keys.OemCloseBrackets))
-                MagFilter = (FilterLevel) (((int) MagFilter + 1)%3);
+                magFilter = (FilterLevel) (((int) magFilter + 1)%3);
 
             if (pressedKeys.Contains(Keys.OemOpenBrackets) && !prevPressedKeys.Contains(Keys.OemOpenBrackets))
-                MipFilter = (FilterLevel) (((int) MipFilter + 1)%3);
+                mipFilter = (FilterLevel) (((int) mipFilter + 1)%3);
 
         }
 
-        private bool Multisampling { get; set; }
 
         private void UpdateLightsColor(GameTime gameTime)
         {
@@ -363,9 +337,9 @@ namespace GK1
 
             var ss = new SamplerState
             {
-                Filter = TextureFilterFromMinMagMip(MinFilter, MagFilter, MipFilter),
+                Filter = TextureFilterFromMinMagMip(minFilter, magFilter, mipFilter),
                 MaxAnisotropy = 16,
-                MipMapLevelOfDetailBias = MipMapLevelOfDetailBias,
+                MipMapLevelOfDetailBias = mipMapLevelOfDetailBias,
                 AddressU = TextureAddressMode.Mirror,
                 AddressW = TextureAddressMode.Mirror,
                 AddressV = TextureAddressMode.Mirror,
@@ -381,11 +355,11 @@ namespace GK1
             graphics.GraphicsDevice.BlendState = BlendState.AlphaBlend;
             graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            graphics.PreferMultiSampling = Multisampling;
-            graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = Multisampling ? 4 : 0;
+            graphics.PreferMultiSampling = multisampling;
+            graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = multisampling ? 4 : 0;
             graphics.GraphicsDevice.RasterizerState = new RasterizerState
             {
-                MultiSampleAntiAlias = Multisampling,
+                MultiSampleAntiAlias = multisampling,
                 CullMode = CullMode.CullCounterClockwiseFace
             };
             for (int i = 0; i < 15; i++)
@@ -403,7 +377,7 @@ namespace GK1
                     cModel.Draw(camera);
                 }
                 smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-                man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+                manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
             }
             //water.RenderReflection(camera);
 
@@ -422,7 +396,7 @@ namespace GK1
                 cModel.Draw(camera);
             }
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-            man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
             GraphicsDevice.RasterizerState = previousRasterizerState;
 
             foreach (var cModel in loadedModels)
@@ -433,12 +407,12 @@ namespace GK1
             }
             smoke.SetClipPlane(-clipPlane);
             smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
-            man.SetClipPlane(-clipPlane);
-            man.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
+            manBillboardSystem.SetClipPlane(-clipPlane);
+            manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.WorldMatrix, camera.Up, camera.Right);
 
             foreach (var cModel in loadedModels)
                 cModel.SetClipPlane(clipPlane);
-            man.SetClipPlane(clipPlane);
+            manBillboardSystem.SetClipPlane(clipPlane);
             smoke.SetClipPlane(clipPlane);
         }
 
