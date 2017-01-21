@@ -37,15 +37,11 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 	VertexShaderOutput output;
 	output.Position1 = input.Position;
 	float3 position = float3((input.Position.x / 3) * (input.Position.x / 3), (input.Position.y / 3) *(input.Position.y / 3), (input.Position.x / 3) * (input.Position.x / 3) + (input.Position.y / 3) *(input.Position.y / 3));
-	// Move to billboard corner
 	float2 offset = Size * float2((input.UV.x - 0.5f) * 2.0f, -(input.UV.y - 0.5f) * 2.0f);
 	position += offset.x * Side + offset.y * Up + float3(-10, 10, 0);
-	// Determine how long this particle has been alive
 	float relativeTime = (Time - input.StartTime);
 	output.RelativeTime = relativeTime;
-	// Move the vertex along its movement direction and the wind direction
 	position += (input.Direction * input.Speed + Wind) * relativeTime;
-	// Transform the final position by the view and projection matrices
 	output.Position = mul(float4(position, 1), mul(View, Projection));
 	output.UV = input.UV;
 	return output;
@@ -55,15 +51,11 @@ float4 PixelShaderFunction(VertexShaderOutput input) : COLOR0
 {
 	if (ClipPlaneEnabled)
 		clip(dot(input.Position1, ClipPlane.xyz) + ClipPlane.w);
-	// Ignore particles that aren't active
 	clip(input.RelativeTime);
-	// Sample texture
 	float4 color = tex2D(texSampler, input.UV);
-	// Fade out towards end of life
 	float d = clamp(1.0f - pow((input.RelativeTime / Lifespan), 10), 0, 1);
-	// Fade in at beginning of life
+
 	d *= clamp((input.RelativeTime / FadeInTime), 0, 1);
-	// Return color * fade amount
 	return float4(color * d);
 }
 
