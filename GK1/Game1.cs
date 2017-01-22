@@ -40,8 +40,21 @@ namespace GK1
         private FilterLevel mipFilter = FilterLevel.Anisotropic;
         private bool multisampling;
 
-        private BloomComponent bloom;
         private SpriteBatch spriteBatch;
+
+        private RenderTarget2D renderTarget;
+
+        private bool isFirst = true;
+        private bool shouldResetLiquid = true;
+        private RenderTarget2D renderTargetLiquid1;
+        private RenderTarget2D renderTargetLiquid2;
+
+        private RenderTarget2D CurrentTarget => isFirst ? renderTargetLiquid1 : renderTargetLiquid2;
+        private RenderTarget2D PreviousTarget => isFirst ? renderTargetLiquid2 : renderTargetLiquid1;
+
+        private Texture2D liquidTextTexture;
+        private Texture2D perlinNoiseTexture;
+        private Effect liquidEffect;
 
         private enum FilterLevel
         {
@@ -65,7 +78,7 @@ namespace GK1
             liquidEffect = Content.Load<Effect>("Liquid");
             CreateBillboardSystems();
             metroTexture = Content.Load<Texture2D>("metro");
-            initialTexture = Content.Load<Texture2D>("Texture");
+            liquidTextTexture = Content.Load<Texture2D>("Texture");
             perlinNoiseTexture = Content.Load<Texture2D>("perlin2");
             camera = new Camera.Camera(graphics.GraphicsDevice);
             CreateModels();
@@ -82,8 +95,8 @@ namespace GK1
             var pp = graphics.GraphicsDevice.PresentationParameters;
             renderTarget = new RenderTarget2D(graphics.GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, graphics.GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
 
-            renderTargetLiquid1 = new RenderTarget2D(graphics.GraphicsDevice, initialTexture.Width, initialTexture.Height, true, initialTexture.Format, DepthFormat.Depth24);
-            renderTargetLiquid2 = new RenderTarget2D(graphics.GraphicsDevice, initialTexture.Width, initialTexture.Height, true, initialTexture.Format, DepthFormat.Depth24);
+            renderTargetLiquid1 = new RenderTarget2D(graphics.GraphicsDevice, liquidTextTexture.Width, liquidTextTexture.Height, true, liquidTextTexture.Format, DepthFormat.Depth24);
+            renderTargetLiquid2 = new RenderTarget2D(graphics.GraphicsDevice, liquidTextTexture.Width, liquidTextTexture.Height, true, liquidTextTexture.Format, DepthFormat.Depth24);
         }
 
         private void CreateMirror()
@@ -222,7 +235,7 @@ namespace GK1
         protected override void Update(GameTime gameTime)
         {
             var currentKeyboardState = Keyboard.GetState();
-            if (currentKeyboardState.GetPressedKeys().Contains(Keys.Enter)) resetLiquidTexture = true;
+            ResetLiquid(currentKeyboardState);
             if (currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
             if (currentKeyboardState.IsKeyDown(Keys.Space))
@@ -235,6 +248,12 @@ namespace GK1
             UpdateTexturesParameters(currentKeyboardState.GetPressedKeys(), prevKeyboardState.GetPressedKeys());
             prevKeyboardState = currentKeyboardState;
             base.Update(gameTime);
+        }
+
+        private void ResetLiquid(KeyboardState currentKeyboardState)
+        {
+            if (currentKeyboardState.GetPressedKeys().Contains(Keys.Enter))
+                shouldResetLiquid = true;
         }
 
         private void UpdateParticle()
@@ -375,25 +394,10 @@ namespace GK1
                 manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Right);
             }
             //bloom?.Draw(gameTime);
-
-
-
             base.Draw(gameTime);
         }
 
-        private RenderTarget2D renderTarget;
 
-        private bool switchTargetFlag = true;
-        private bool resetLiquidTexture = true;
-        private RenderTarget2D renderTargetLiquid1;
-        private RenderTarget2D renderTargetLiquid2;
-
-        private RenderTarget2D CurrentTarget => switchTargetFlag ? renderTargetLiquid1 : renderTargetLiquid2;
-        private RenderTarget2D PreviousTarget => switchTargetFlag ? renderTargetLiquid2 : renderTargetLiquid1;
-
-        private Texture2D initialTexture;
-        private Texture2D perlinNoiseTexture;
-        private Effect liquidEffect;
         private void CreateLiquidText(GameTime gameTime)
         {
             var time = (float)gameTime.TotalGameTime.TotalSeconds;
@@ -402,29 +406,32 @@ namespace GK1
             var prevWidth = graphics.PreferredBackBufferWidth;
             var prevHeight = graphics.PreferredBackBufferHeight;
 
-            graphics.PreferredBackBufferWidth = initialTexture.Width;
-            graphics.PreferredBackBufferHeight = initialTexture.Height;
+            graphics.PreferredBackBufferWidth = liquidTextTexture.Width;
+            graphics.PreferredBackBufferHeight = liquidTextTexture.Height;
             graphics.ApplyChanges();
 
-            var liquidRectangle = new Rectangle(0, 0, initialTexture.Width, initialTexture.Height);
+            var liquidRectangle = new Rectangle(0, 0, liquidTextTexture.Width, liquidTextTexture.Height);
 
-            if (resetLiquidTexture)
-            {
-                graphics.GraphicsDevice.SetRenderTarget(PreviousTarget);
-
-                spriteBatch.Begin();
-                spriteBatch.Draw(initialTexture, liquidRectangle, Color.White);
-                spriteBatch.End();
-
-                renderTarget = PreviousTarget;
-                if (renderTarget != null) (loadedModels[0] as UserDefinedModel).LiquidTexture = renderTarget;
-                resetLiquidTexture = false;
-            }
+            ResetLiquidTexture(liquidRectangle);
 
             graphics.GraphicsDevice.SetRenderTarget(CurrentTarget);
 
+            DrawLiquidTexture(time, dt, liquidRectangle);
+
+            renderTarget = CurrentTarget;
+            if (renderTarget != null) (loadedModels[0] as UserDefinedModel).LiquidTexture = renderTarget;
+            isFirst = !isFirst;
+
+            graphics.PreferredBackBufferWidth = prevWidth;
+            graphics.PreferredBackBufferHeight = prevHeight;
+            graphics.ApplyChanges();
+            graphics.GraphicsDevice.SetRenderTarget(null);
+        }
+
+        private void DrawLiquidTexture(float time, float dt, Rectangle liquidRectangle)
+        {
             liquidEffect.CurrentTechnique = liquidEffect.Techniques["LiquidTechnique"];
-            var pixelSize = new Vector2((float)1 / initialTexture.Width, (float)1 / initialTexture.Height);
+            var pixelSize = new Vector2((float) 1 / liquidTextTexture.Width, (float) 1 / liquidTextTexture.Height);
 
             liquidEffect.Parameters["PixelSize"].SetValue(pixelSize);
             liquidEffect.Parameters["Perlin"].SetValue(perlinNoiseTexture);
@@ -434,15 +441,20 @@ namespace GK1
             spriteBatch.Begin(0, BlendState.Opaque, null, null, null, liquidEffect);
             spriteBatch.Draw(PreviousTarget, liquidRectangle, Color.White);
             spriteBatch.End();
+        }
 
-            renderTarget = CurrentTarget;
+        private void ResetLiquidTexture(Rectangle liquidRectangle)
+        {
+            if (!shouldResetLiquid) return;
+            graphics.GraphicsDevice.SetRenderTarget(PreviousTarget);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(liquidTextTexture, liquidRectangle, Color.White);
+            spriteBatch.End();
+
+            renderTarget = PreviousTarget;
             if (renderTarget != null) (loadedModels[0] as UserDefinedModel).LiquidTexture = renderTarget;
-            switchTargetFlag = !switchTargetFlag;
-
-            graphics.PreferredBackBufferWidth = prevWidth;
-            graphics.PreferredBackBufferHeight = prevHeight;
-            graphics.ApplyChanges();
-            graphics.GraphicsDevice.SetRenderTarget(null);
+            shouldResetLiquid = false;
         }
 
         private void SetRasterizerParameters()

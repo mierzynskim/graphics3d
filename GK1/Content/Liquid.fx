@@ -22,9 +22,9 @@ float4 PixelShaderLiquidFunction(float4 pos : SV_POSITION, float4 color1 : COLOR
     float4 h = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     h.x = tex2D(LiquidTextureSampler, texCoord).r;
-    h.y = tex2D(LiquidTextureSampler, texCoord + float2(-PixelSize.x, -PixelSize.y)).r; // LU
-    h.z = tex2D(LiquidTextureSampler, texCoord + float2(-PixelSize.x, 0)).r; // RU
-    h.w = tex2D(LiquidTextureSampler, texCoord + float2(0, -PixelSize.y)).r; // U
+    h.y = tex2D(LiquidTextureSampler, texCoord + float2(-PixelSize.x, -PixelSize.y)).r; 
+    h.z = tex2D(LiquidTextureSampler, texCoord + float2(-PixelSize.x, 0)).r; 
+    h.w = tex2D(LiquidTextureSampler, texCoord + float2(0, -PixelSize.y)).r;
 
     float d = tex2D(PerlinSampler, texCoord + float2(8.0*time,time)).r * 2.0 - 1.0;
     float e = tex2D(PerlinSampler, texCoord).r;
