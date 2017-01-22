@@ -62,13 +62,28 @@ namespace GK1
         {
             LoadVertices();
             effect = Content.Load<Effect>("Shader");
+            liquidEffect = Content.Load<Effect>("Liquid");
             CreateBillboardSystems();
             metroTexture = Content.Load<Texture2D>("metro");
+            initialTexture = Content.Load<Texture2D>("Texture");
+            perlinNoiseTexture = Content.Load<Texture2D>("perlinNoise");
             camera = new Camera.Camera(graphics.GraphicsDevice);
             CreateModels();
             CreateMirror();
             spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
             base.Initialize();
+        }
+
+        protected override void LoadContent()
+        {
+            base.LoadContent();
+            spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
+
+            var pp = graphics.GraphicsDevice.PresentationParameters;
+            renderTarget = new RenderTarget2D(graphics.GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, graphics.GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
+
+            renderTargetLiquid1 = new RenderTarget2D(graphics.GraphicsDevice, initialTexture.Width, initialTexture.Height, true, initialTexture.Format, DepthFormat.Depth24);
+            renderTargetLiquid2 = new RenderTarget2D(graphics.GraphicsDevice, initialTexture.Width, initialTexture.Height, true, initialTexture.Format, DepthFormat.Depth24);
         }
 
         private void CreateMirror()
@@ -138,12 +153,12 @@ namespace GK1
 
         private void AddManModel(List<Vector3> modelsPositions)
         {
-            var manModel = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
-                Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
-                Matrix.CreateScale(0.65f), GraphicsDevice);
-            manModel.SetModelEffect(effect, true);
-            manModel.Material = mat;
-            loadedModels.Add(manModel);
+            //var manModel = new LoadedModel(Content.Load<Model>("Old Asian Business Man"), modelsPositions[4],
+            //    Matrix.CreateRotationX(MathHelper.ToRadians(90f)) * Matrix.CreateRotationZ(MathHelper.ToRadians(180f)),
+            //    Matrix.CreateScale(0.65f), GraphicsDevice);
+            //manModel.SetModelEffect(effect, true);
+            //manModel.Material = mat;
+            //loadedModels.Add(manModel);
         }
 
         private void AddPlatformAndStationModels()
@@ -207,6 +222,7 @@ namespace GK1
         protected override void Update(GameTime gameTime)
         {
             var currentKeyboardState = Keyboard.GetState();
+            if (currentKeyboardState.GetPressedKeys().Contains(Keys.Enter)) resetLiquidTexture = true;
             if (currentKeyboardState.IsKeyDown(Keys.Escape))
                 Exit();
             if (currentKeyboardState.IsKeyDown(Keys.Space))
@@ -338,13 +354,14 @@ namespace GK1
         protected override void Draw(GameTime gameTime)
         {
             effect.Parameters["CameraPosition"].SetValue(camera.Position);
-            mirror.PreDraw(camera, gameTime);
+            //mirror.PreDraw(camera, gameTime);
             SetRasterizerParameters();
-            bloom?.BeginDraw();
+            //bloom?.BeginDraw();
             GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-            mirror.Draw(camera);
+            //mirror.Draw(camera);
+            CreateLiquidText(gameTime);
             if (clipEnabled)
                 DrawWithClipPlane();
             else
@@ -357,11 +374,75 @@ namespace GK1
                 smoke.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Up, camera.Right);
                 manBillboardSystem.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Right);
             }
-            bloom?.Draw(gameTime);
+            //bloom?.Draw(gameTime);
 
 
 
             base.Draw(gameTime);
+        }
+
+        private RenderTarget2D renderTarget;
+
+        private bool switchTargetFlag = true;
+        private bool resetLiquidTexture = true;
+        private RenderTarget2D renderTargetLiquid1;
+        private RenderTarget2D renderTargetLiquid2;
+
+        private RenderTarget2D CurrentTarget => switchTargetFlag ? renderTargetLiquid1 : renderTargetLiquid2;
+        private RenderTarget2D PreviousTarget => switchTargetFlag ? renderTargetLiquid2 : renderTargetLiquid1;
+
+        private Texture2D initialTexture;
+        private Texture2D perlinNoiseTexture;
+        private Effect liquidEffect;
+        private void CreateLiquidText(GameTime gameTime)
+        {
+            var time = (float)gameTime.TotalGameTime.TotalSeconds;
+            var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            var prevWidth = graphics.PreferredBackBufferWidth;
+            var prevHeight = graphics.PreferredBackBufferHeight;
+
+            graphics.PreferredBackBufferWidth = initialTexture.Width;
+            graphics.PreferredBackBufferHeight = initialTexture.Height;
+            graphics.ApplyChanges();
+
+            var liquidRectangle = new Rectangle(0, 0, initialTexture.Width, initialTexture.Height);
+
+            if (resetLiquidTexture)
+            {
+                graphics.GraphicsDevice.SetRenderTarget(PreviousTarget);
+
+                spriteBatch.Begin();
+                spriteBatch.Draw(initialTexture, liquidRectangle, Color.White);
+                spriteBatch.End();
+
+                renderTarget = PreviousTarget;
+                if (renderTarget != null) (loadedModels[0] as UserDefinedModel).LiquidTexture = renderTarget;
+                resetLiquidTexture = false;
+            }
+
+            graphics.GraphicsDevice.SetRenderTarget(CurrentTarget);
+
+            liquidEffect.CurrentTechnique = liquidEffect.Techniques["LiquidTechnique"];
+            var pixelSize = new Vector2((float)1 / initialTexture.Width, (float)1 / initialTexture.Height);
+
+            liquidEffect.Parameters["PixelSize"].SetValue(pixelSize);
+            liquidEffect.Parameters["Perlin"].SetValue(perlinNoiseTexture);
+            liquidEffect.Parameters["time"].SetValue(time);
+            liquidEffect.Parameters["dt"].SetValue(dt);
+
+            spriteBatch.Begin(0, BlendState.Opaque, null, null, null, liquidEffect);
+            spriteBatch.Draw(PreviousTarget, liquidRectangle, Color.White);
+            spriteBatch.End();
+
+            renderTarget = CurrentTarget;
+            if (renderTarget != null) (loadedModels[0] as UserDefinedModel).LiquidTexture = renderTarget;
+            switchTargetFlag = !switchTargetFlag;
+
+            graphics.PreferredBackBufferWidth = prevWidth;
+            graphics.PreferredBackBufferHeight = prevHeight;
+            graphics.ApplyChanges();
+            graphics.GraphicsDevice.SetRenderTarget(null);
         }
 
         private void SetRasterizerParameters()

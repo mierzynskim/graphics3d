@@ -143,3 +143,32 @@ technique Technique1
 		PixelShader = compile ps_5_0 PixelShaderFunction();
 	}
 }
+
+float4 BackgroundColor;
+float4 ForegroundColor;
+
+float4 PixelShaderLiquidFunction(VertexShaderOutput input) : COLOR0
+{
+    float4 outColor = CalculateLights(input);
+
+    float intensity = tex2D(BasicTextureSampler, input.UV).r;
+
+    float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    color.r = (ForegroundColor.r - BackgroundColor.r) * intensity + BackgroundColor.r;
+    color.g = (ForegroundColor.g - BackgroundColor.g) * intensity + BackgroundColor.g;
+    color.b = (ForegroundColor.b - BackgroundColor.b) * intensity + BackgroundColor.b;
+
+
+    float4 finalTextureColor = color + outColor;
+
+    return saturate(finalTextureColor);
+}
+
+technique TexturedLiquid
+{
+    pass Pass1
+    {
+        VertexShader = compile vs_5_0 VertexShaderFunction();
+        PixelShader = compile ps_5_0 PixelShaderLiquidFunction();
+    }
+}

@@ -25,6 +25,8 @@ namespace GK1.Models
             this.texture = texture;
         }
 
+        public Texture2D LiquidTexture { get; set; }
+
         public override void Draw(CameraAbstract camera)
         {
             Matrix worldMatrix;
@@ -67,7 +69,15 @@ namespace GK1.Models
             effect.Parameters["LightTypes"]?.SetValue(((LightingMaterial)Material).LightTypes.Select(x => (float)x).ToArray());
 
             effect.Parameters["AmbientColor"].SetValue(Color.Black.ToVector3());
-            effect.Parameters["BasicTexture"].SetValue(texture);
+            if (LiquidTexture != null)
+            {
+                effect.CurrentTechnique = effect.Techniques["TexturedLiquid"];
+                effect.Parameters["BackgroundColor"].SetValue(Color.Gray.ToVector4());
+                effect.Parameters["ForegroundColor"].SetValue(Color.IndianRed.ToVector4());
+                effect.Parameters["BasicTexture"].SetValue(LiquidTexture);
+            }
+            else
+                effect.Parameters["BasicTexture"].SetValue(texture);
             effect.Parameters["View"].SetValue(camera.ViewMatrix);
             effect.Parameters["TextureEnabled"].SetValue(true);
             effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
