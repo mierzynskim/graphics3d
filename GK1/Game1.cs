@@ -66,7 +66,7 @@ namespace GK1
             CreateBillboardSystems();
             metroTexture = Content.Load<Texture2D>("metro");
             initialTexture = Content.Load<Texture2D>("Texture");
-            perlinNoiseTexture = Content.Load<Texture2D>("perlinNoise");
+            perlinNoiseTexture = Content.Load<Texture2D>("perlin2");
             camera = new Camera.Camera(graphics.GraphicsDevice);
             CreateModels();
             CreateMirror();
